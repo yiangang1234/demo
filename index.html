@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>사고력 게임 플랫폼 데모</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 레이아웃: 폰 한 화면 앱. 모눈 노트 위에 잉크 남색, 형광펜 노랑은 보상·강조에만 */
+  --paper:#f2f4f8; --card:#ffffff; --ink:#151c45; --muted:#596185; --line:#d8deec;
+  --blue:#2b4fe0; --hl:#ffd93b; --good:#12895a; --bad:#d23f35; --lock:#8a90a8;
+  --display:'Gothic A1','IBM Plex Sans KR','Apple SD Gothic Neo',sans-serif;
+  --body:'IBM Plex Sans KR',system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{font-synthesis:none;text-rendering:optimizeLegibility}
+html,body{height:100%;margin:0}
+body{background:var(--ink);font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden;font-size:15px;line-height:1.55}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+#app{position:relative;max-width:440px;height:100%;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;
+  background-color:var(--paper);
+  background-image:linear-gradient(rgba(43,79,224,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(43,79,224,.07) 1px,transparent 1px);
+  background-size:22px 22px}
+@media (min-width:500px){#app{height:calc(100% - 32px);margin:16px auto;border-radius:30px;box-shadow:0 30px 80px rgba(0,0,0,.45)}}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:var(--paper);border-bottom:2px solid var(--ink)}
+.logo{font-family:var(--display);font-weight:800;font-size:22px;line-height:1.2;letter-spacing:-.02em;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.logo small{font-family:var(--body);font-size:10px;font-weight:700;border:1.5px solid var(--ink);border-radius:5px;padding:1px 4px;line-height:1.4}
+.chips{display:flex;gap:5px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:3px;font-weight:700;font-size:12.5px;padding:3px 8px;border-radius:999px;background:var(--card);border:1.5px solid var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.4}
+.chip svg{width:14px;height:14px}
+.tierchip{padding:2px;border-radius:50%;width:30px;height:30px;justify-content:center}
+.tierchip svg{width:22px;height:22px}
+
+main{flex:1;overflow-y:auto;padding:16px 16px 28px;-webkit-overflow-scrolling:touch}
+.tabs{display:grid;grid-template-columns:repeat(6,1fr);border-top:2px solid var(--ink);background:var(--card);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{border:0;background:none;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:600;color:var(--muted);min-width:0}
+.tabs button svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs button span{border-bottom:3px solid transparent;padding:0 1px 1px;white-space:nowrap}
+.tabs button[aria-current="page"]{color:var(--ink)}
+.tabs button[aria-current="page"] span{border-bottom-color:var(--hl)}
+
+/* type */
+h1,h2,h3{text-wrap:balance;margin:0}
+.h1{font-family:var(--display);font-weight:800;font-size:27px;line-height:1.38;letter-spacing:-.02em}
+.sec{font-family:var(--display);font-weight:800;font-size:19px;margin:26px 0 10px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.sec small{font-family:var(--body);font-size:12px;font-weight:500;color:var(--muted)}
+/* 형광펜은 글자 아래쪽 띠로만: 글자를 덮지 않게 */
+.mark{background:linear-gradient(var(--hl),var(--hl)) left bottom/100% .3em no-repeat;padding:0 .06em .08em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.blank{display:inline-block;width:2.4em;height:1em;border-bottom:2.5px solid currentColor;vertical-align:-.1em;margin:0 .15em}
+.muted{color:var(--muted)}
+.tiny{font-size:12px}
+.num{font-variant-numeric:tabular-nums}
+
+/* cards */
+.card{background:var(--card);border:1.5px solid var(--ink);border-radius:16px;padding:14px}
+.card+.card{margin-top:10px}
+.tap{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--ink);border-radius:16px;padding:13px 14px;box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.tap:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.tap.locked{border-style:dashed;box-shadow:none;background:rgba(255,255,255,.6);color:var(--muted)}
+.tap.off{box-shadow:none;background:rgba(255,255,255,.7)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.list{display:grid;gap:10px}
+.t-title{font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.t-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.t-meta{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted)}
+.t-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tro{display:inline-flex;align-items:center;gap:3px;font-weight:700;font-size:13px;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tro svg{width:15px;height:15px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;border:1.2px solid currentColor;line-height:1.5;white-space:nowrap}
+.tag.hl{background:var(--hl);border-color:var(--ink);color:var(--ink)}
+.tag.lk{color:var(--lock)}
+.tag.tm{color:var(--blue)}
+.lockic{width:14px;height:14px;flex:none}
+.feat{background:var(--ink);color:#fff;border-color:var(--ink);box-shadow:3px 3px 0 var(--hl)}
+.feat .t-sub,.feat .t-meta,.feat .tro{color:#d4d8f5}
+.cat .t-title{font-size:18px}
+.back{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--ink);background:var(--card);border-radius:10px;padding:5px 10px;font-weight:700;font-size:13px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--ink);border-radius:12px;padding:12px 16px;font-weight:700;background:var(--ink);color:#fff;min-height:46px}
+.btn.hl{background:var(--hl);color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.btn.ghost{background:var(--card);color:var(--ink)}
+.btn.sm{padding:6px 11px;min-height:34px;font-size:13px;border-radius:10px}
+.btn[disabled]{background:#e7e9f1;color:var(--lock);border-color:var(--lock);border-style:dashed;box-shadow:none;cursor:not-allowed}
+.btn.full{width:100%}
+.row{display:flex;gap:8px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.spacer{flex:1}
+
+/* bars */
+.bar{height:10px;border-radius:99px;background:#e4e8f3;border:1.2px solid var(--ink);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:99px}
+.bar.hlb i{background:var(--hl)}
+
+/* home */
+.streak{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.flame{width:64px;height:64px;border-radius:18px;background:var(--hl);border:1.5px solid var(--ink);display:grid;place-items:center;position:relative}
+.flame svg{width:30px;height:30px}
+.flame b{position:absolute;bottom:-9px;background:var(--ink);color:#fff;font-size:11px;padding:0 6px;border-radius:99px}
+.quest{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px dashed var(--line)}
+.quest:first-of-type{border-top:0}
+.ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--ink);display:grid;place-items:center;background:#fff}
+.ck.on{background:var(--good);border-color:var(--good)}
+.ck.on svg{width:14px;height:14px;stroke:#fff;stroke-width:3;fill:none}
+.ck.lk{border-style:dashed;border-color:var(--lock)}
+.notice{border:1.5px dashed var(--ink);border-radius:14px;padding:12px 14px;font-size:13px;background:rgba(255,217,59,.25)}
+
+/* sheet (game screens) */
+.sheet{position:absolute;inset:0;background-color:var(--paper);background-image:inherit;background-size:22px 22px;z-index:20;display:none;flex-direction:column}
+.sheet.open{display:flex}
+.sh-head{display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:2px solid var(--ink);background:var(--paper)}
+.x{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--ink);background:var(--card);display:grid;place-items:center;flex:none}
+.x svg{width:16px;height:16px;stroke:var(--ink);stroke-width:2.5}
+.sh-title{font-weight:700;font-size:14px;flex:0 1 auto;max-width:42%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-body{flex:1;overflow-y:auto;padding:16px}
+.sh-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:2px solid var(--ink);background:var(--card)}
+.sh-foot:empty{display:none}
+.prog{flex:1;min-width:0}
+.timer{display:flex;align-items:center;gap:8px}
+.timer b{font-variant-numeric:tabular-nums;min-width:30px;text-align:right;font-size:14px}
+.kind{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.q{font-weight:700;font-size:17px;line-height:1.5;margin:12px 0 14px}
+.opts{display:grid;gap:9px}
+.opt{text-align:left;border:1.5px solid var(--ink);border-radius:14px;background:var(--card);padding:12px 14px;display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start;font-size:15px}
+.opt .n{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--ink);display:grid;place-items:center;font-size:12px;font-weight:700}
+.opt.ok{border-color:var(--good);background:#e5f6ee}
+.opt.ok .n{background:var(--good);color:#fff;border-color:var(--good)}
+.opt.no{border-color:var(--bad);background:#fdeceb}
+.opt.no .n{background:var(--bad);color:#fff;border-color:var(--bad)}
+.opt[disabled]{cursor:default}
+.fb{display:grid;gap:6px;margin-bottom:10px}
+.fb h3{font-family:var(--display);font-weight:800;font-size:22px}
+.fb.ok h3{color:var(--good)}
+.fb.no h3{color:var(--bad)}
+.fb p{margin:0;font-size:14px}
+.passage{background:var(--card);border:1.5px solid var(--ink);border-radius:14px;padding:16px;font-size:15.5px;line-height:1.8}
+.passage p{margin:0 0 12px}
+.passage p:last-child{margin:0}
+details.pv{border:1.5px solid var(--ink);border-radius:12px;background:var(--card);margin-bottom:6px}
+details.pv summary{padding:9px 12px;font-weight:600;font-size:13px;cursor:pointer}
+details.pv .passage{border:0;border-top:1px dashed var(--line);border-radius:0 0 12px 12px;font-size:14px}
+
+/* context blocks */
+.ctx{background:var(--card);border:1.5px solid var(--ink);border-radius:14px;padding:14px;font-size:14.5px}
+.ctx p{margin:0 0 8px}
+.ctx p:last-child{margin:0}
+.chat{display:grid;gap:7px}
+.bub{max-width:82%;padding:8px 12px;border-radius:16px;font-size:14px;line-height:1.45}
+.bub small{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:1px}
+.bub.l{justify-self:start;background:#eef1fa;border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.r{justify-self:end;background:var(--hl);border:1px solid #e3be1a;border-bottom-right-radius:4px}
+.sys{justify-self:center;font-size:11.5px;color:var(--muted);background:#eef1fa;border-radius:99px;padding:2px 10px}
+.suspect{display:grid;grid-template-columns:38px 1fr;gap:10px;padding:10px 0;border-top:1px dashed var(--line)}
+.suspect:first-child{border-top:0;padding-top:0}
+.av{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--ink);display:grid;place-items:center;font-weight:700;background:var(--paper)}
+.suspect .note{font-size:12px;color:var(--muted)}
+.exam{background:#fffdf3;border:1.5px solid var(--ink);border-radius:6px;padding:14px;font-size:14px}
+.exam .stamp{display:inline-block;color:var(--bad);border:2px solid var(--bad);border-radius:6px;padding:0 8px;font-weight:700;transform:rotate(-4deg)}
+
+/* order puzzle */
+.slots{display:grid;gap:8px;min-height:60px;border:1.5px dashed var(--ink);border-radius:14px;padding:10px;background:rgba(255,255,255,.7);margin-bottom:12px}
+.slots .empty{color:var(--muted);font-size:13px;text-align:center;align-self:center}
+.piece{text-align:left;border:1.5px solid var(--ink);border-radius:12px;background:var(--card);padding:10px 12px;font-size:14px;display:grid;grid-template-columns:22px 1fr;gap:8px}
+.piece b{font-weight:700;color:var(--blue)}
+.piece.used{opacity:.35}
+
+/* match puzzle */
+.match{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.match .col{display:grid;gap:8px;align-content:start}
+.mbtn{position:relative;border:1.5px solid var(--ink);border-radius:12px;background:var(--card);padding:11px 10px;font-size:14px;text-align:left;min-height:48px}
+.mbtn.sel{background:var(--hl)}
+.mbtn.done{background:#e5f6ee;border-color:var(--good);color:var(--good);cursor:default}
+.mbtn.bad{background:#fdeceb;border:2px solid var(--bad);color:var(--bad);animation:shake .35s}
+.mbtn.bad::after{content:"✕";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-weight:700}
+.miss{font-size:12px;margin-top:8px;color:var(--muted)}
+.miss.on{color:var(--bad);font-weight:700}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* study card */
+.flash{min-height:250px;display:grid;place-items:center;text-align:center;padding:24px;border:1.5px solid var(--ink);border-radius:20px;background:var(--card);box-shadow:4px 4px 0 var(--ink);width:100%}
+.flash .w{font-family:var(--display);font-weight:800;font-size:32px;line-height:1.35;word-break:keep-all}
+.flash .m{font-size:17px;font-weight:600;margin-top:12px}
+.flash .e{font-size:14px;color:var(--muted);margin-top:10px}
+
+/* quick */
+.qbig{font-weight:700;font-size:24px;line-height:1.45;text-align:center;margin:28px 0 24px;min-height:110px;display:grid;place-items:center;word-break:keep-all}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qopts button{min-height:90px;border:1.5px solid var(--ink);border-radius:18px;background:var(--card);font-size:18px;font-weight:700;box-shadow:3px 3px 0 var(--ink);word-break:keep-all;padding:8px}
+.qopts button.ok{background:#bdebd6}
+.qopts button.no{background:#f7c9c5}
+.score{display:flex;justify-content:center;gap:18px;font-weight:700}
+
+/* result */
+.result{text-align:center;padding:20px 0}
+.result .big{font-family:var(--display);font-weight:800;font-size:56px;line-height:1}
+.rew{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+.rew div{border:1.5px solid var(--ink);border-radius:14px;background:var(--card);padding:12px}
+.rew b{font-family:var(--display);font-weight:800;font-size:24px;display:block}
+
+/* league */
+.tier{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px dashed var(--line)}
+.tier:first-child{border-top:0}
+.dot{width:12px;height:12px;border-radius:4px;border:1.2px solid var(--ink);flex:none}
+.divs{display:flex;gap:4px}
+.divs span{font-size:11px;font-weight:700;border:1.2px solid var(--line);border-radius:6px;padding:0 6px;color:var(--muted)}
+.shields{display:flex;gap:6px}
+.shields svg{width:24px;height:24px}
+.log{font-size:12.5px;color:var(--muted);margin-top:8px;display:grid;gap:3px;min-height:58px}
+.rk{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:8px 6px;border-top:1px dashed var(--line)}
+.rk:first-child{border-top:0}
+.rk .pos{font-family:var(--display);font-weight:800;font-size:17px;text-align:center}
+.rk.me{background:linear-gradient(90deg,rgba(255,217,59,.5),transparent);border-radius:8px}
+.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
+.seg button{flex:none;border:1.5px solid var(--ink);background:var(--card);border-radius:99px;padding:4px 11px;font-size:13px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+
+/* friends & me */
+.fr{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.fr:first-child{border-top:0}
+.ava{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--paper);border:1.5px solid var(--ink);position:relative}
+.ava.on::after{content:"";position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:var(--good);border:2px solid #fff}
+.prof{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.pava{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:30px;background:var(--paper)}
+.fr-basic{border:2px solid var(--ink)}
+.fr-ink{border:5px solid var(--ink)}
+.fr-hl{border:5px dashed var(--ink);background:var(--hl)}
+.fr-star{border:5px solid transparent;background:linear-gradient(var(--paper),var(--paper)) padding-box,conic-gradient(var(--hl),var(--blue),var(--bad),var(--hl)) border-box}
+.abil{display:grid;grid-template-columns:96px 1fr 44px;gap:10px;align-items:center;padding:6px 0;font-size:14px}
+.abil .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.abil.weak .bar i{background:var(--bad)}
+.ach{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px dashed var(--line)}
+.ach:first-child{border-top:0}
+.medal{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--ink);background:#eef1fa}
+.medal svg{width:18px;height:18px}
+.medal.on{background:var(--hl)}
+.rew-road{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px}
+.rew-road div{flex:none;width:96px;border:1.5px solid var(--ink);border-radius:12px;padding:8px;background:var(--card);font-size:12px}
+.rew-road div.off{border-style:dashed;color:var(--muted);background:transparent}
+.rew-road b{display:block;font-family:var(--display);font-weight:800;font-size:15px}
+.invite{border:1.5px solid var(--ink);border-radius:16px;background:#eef1fa;padding:14px;margin:12px 0}
+.inp{width:100%;border:1.5px solid var(--ink);border-radius:10px;padding:10px 12px;font:inherit;background:#fff;color:var(--ink);margin-top:4px}
+.inp:focus{outline:3px solid var(--blue);outline-offset:1px}
+.vsbox{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin:16px 0 8px}
+.vsbox>div:not(.vs){border:1.5px solid var(--ink);border-radius:14px;background:var(--card);padding:10px 8px;text-align:center}
+.vsbox small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vsbox b{display:block;font-family:var(--display);font-weight:800;font-size:28px;line-height:1.3}
+.vsbox span{font-size:12px;color:var(--muted)}
+.vs{font-family:var(--display);font-weight:800;font-size:18px}
+.outcome{font-size:21px;margin:6px 0 4px}
+.outcome.win{color:var(--good)}.outcome.lose{color:var(--bad)}
+.price{font-family:var(--display);font-weight:800;font-size:34px;line-height:1.3;margin:4px 0}
+.cardimg{width:100%;border-radius:12px;border:1.5px solid var(--ink);display:block;margin:10px 0}
+.cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.invite .link{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#fff;border:1px dashed var(--lock);border-radius:8px;padding:6px 8px;margin-top:8px;color:var(--muted);word-break:break-all}
+
+/* community */
+.post{background:var(--card);border:1.5px solid var(--ink);border-radius:16px;padding:14px}
+.post+.post{margin-top:12px}
+.post-h{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.post-h .ava{width:28px;height:28px;font-size:12px}
+.cho{font-family:var(--display);font-weight:800;font-size:32px;letter-spacing:6px;line-height:1.2}
+.ans{display:inline-block;font-weight:700;font-size:20px;background:linear-gradient(var(--hl),var(--hl)) left bottom/100% .3em no-repeat;padding:0 .1em .08em}
+.vote{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.vres{display:grid;gap:6px;margin-top:12px}
+.vrow{display:grid;grid-template-columns:auto 1fr 44px;gap:8px;align-items:center;font-size:13px}
+.vrow .bar i{background:var(--lock)}
+.vrow.mine b{color:var(--blue)}
+.vrow b{white-space:nowrap;min-width:92px}
+.vrow.mine .bar i{background:var(--blue)}
+.vrow span:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.result-text{margin:0;font-size:17px;font-weight:600;line-height:1.65;word-break:keep-all}
+.poem{display:grid;gap:6px}
+.poem div{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;font-size:15.5px}
+.poem b{font-family:var(--display);font-weight:800;font-size:19px;min-width:1.4em;background:linear-gradient(var(--hl),var(--hl)) left bottom/100% .3em no-repeat;padding:0 .1em .08em}
+.story{display:grid;gap:6px}
+.sline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;text-align:left;border:1px solid var(--line);border-radius:12px;background:#fafbfe;padding:8px 10px;font-size:14px}
+.sline small{display:block;font-size:11px;font-weight:700;color:var(--muted)}
+.sline .hrt{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
+.sline.best{border-color:var(--ink);background:#fff7cf}
+.sline.best .hrt{color:var(--bad)}
+
+/* modal + toast */
+.modal{position:absolute;inset:0;background:rgba(21,28,69,.55);display:none;align-items:flex-end;z-index:40}
+.modal.open{display:flex}
+.mbox{background:var(--card);border-radius:22px 22px 0 0;width:100%;padding:20px 18px calc(18px + env(safe-area-inset-bottom));max-height:88%;overflow-y:auto;border-top:2px solid var(--ink)}
+.mbox h2{font-family:var(--display);font-weight:800;font-size:24px;margin:8px 0 6px}
+.mbox ul{padding-left:18px;margin:10px 0 14px}
+.mbox li{margin:4px 0;font-size:14px}
+.toast{position:absolute;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:60;transition:opacity .2s,transform .2s;max-width:90%;text-align:center;box-shadow:3px 3px 0 var(--hl)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="logo">THINKY <small>데모</small></div>
+    <div class="chips" id="chips"></div>
+  </header>
+  <main id="main"></main>
+  <nav class="tabs" id="tabs" aria-label="메인 메뉴"></nav>
+  <section class="sheet" id="sheet" aria-modal="true" role="dialog">
+    <div class="sh-head"><button class="x" data-act="close" aria-label="닫기"><svg viewBox="0 0 16 16"><path d="M3 3l10 10M13 3L3 13"/></svg></button><div class="sh-title" id="shTitle"></div><div class="prog" id="shProg"></div></div>
+    <div class="sh-body" id="shBody"></div>
+    <div class="sh-foot" id="shFoot"></div>
+  </section>
+  <div class="modal" id="modal" data-act="mclose"><div class="mbox" id="mbox" role="dialog" aria-modal="true"></div></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+/* ============ 배포 설정 ============ */
+/* GitHub Pages 등에 올린 주소를 넣으면 도전장 링크가 그 주소로 만들어져요. 비워 두면 지금 페이지 주소를 써요. 예: 'https://아이디.github.io/thinky/' */
+const SHARE_BASE='';
+/* 대기자 등록 폼(구글 폼, Tally 등) 주소. 비워 두면 등록 버튼이 비활성화돼요. */
+const WAITLIST_URL='';
+
+/* ============ 유틸 ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtQ=s=>String(s).replace(/_{2,}/g,'<span class="blank" aria-label="빈칸"></span>');
+const plainQ=s=>String(s).replace(/_{2,}/g,'＿＿');
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function dkey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+/* 받침 유무로 을/를 고르기 */
+const eul=w=>{const c=w.charCodeAt(w.length-1);return w+((c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28)?'을':'를')};
+/* 하루의 시작 = 아침 6시 */
+const DAY_START=6;
+const gday=(t=Date.now())=>dkey(new Date(t-DAY_START*36e5));
+const gidx=(t=Date.now())=>{const d=new Date(t-DAY_START*36e5);return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5)};
+function nextReset(){const n=new Date(),r=new Date(n);r.setHours(DAY_START,0,0,0);if(n>=r)r.setDate(r.getDate()+1);return r.getTime()}
+function fmtLeft(ms){ms=Math.max(0,ms);const s=Math.ceil(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return h?`${h}시간 ${m}분`:`${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`}
+
+const IC={
+ flame:'<svg viewBox="0 0 24 24"><path fill="#d23f35" d="M12 2c.8 3.6 5.5 5.6 5.5 11.2A5.5 5.5 0 0 1 6.5 13c0-3 1.6-4.8 2.7-6.2.4 2 1.4 3.3 2.6 3.4-.3-2.8-.6-5.5.2-8.2z"/></svg>',
+ trophy:'<svg viewBox="0 0 24 24"><path fill="#e0a91b" stroke="#151c45" stroke-width="1.4" d="M7 3h10v4a5 5 0 0 1-10 0V3zM7 5H4v1a3 3 0 0 0 3 3M17 5h3v1a3 3 0 0 1-3 3M12 12v4M8.5 20h7l-1-4h-5z"/></svg>',
+ lock:'<svg class="lockic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
+ check:'<svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
+ shield:on=>`<svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V5z" fill="${on?'#2b4fe0':'none'}" stroke="${on?'#151c45':'#8a90a8'}" stroke-width="1.6" stroke-dasharray="${on?'0':'3 2'}"/></svg>`,
+ unrank:'<svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V5z" fill="#eef1fa" stroke="#151c45" stroke-width="1.6"/><text x="12" y="16.2" text-anchor="middle" font-size="11" font-weight="700" fill="#151c45" font-family="IBM Plex Sans KR,sans-serif">?</text></svg>',
+ medal:'<svg viewBox="0 0 24 24" fill="none" stroke="#151c45" stroke-width="1.8"><circle cx="12" cy="14" r="6"/><path d="M8 3l4 5 4-5"/></svg>',
+ home:'<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+ play:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M10 8.5v7l6-3.5z"/></svg>',
+ league:'<svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>',
+ community:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg>',
+ friends:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.2a5 5 0 0 1 5.5 5"/></svg>',
+ me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
+};
+const troHTML=n=>`<span class="tro">${IC.trophy}${n}</span>`;
+
+/* ============ 콘텐츠 ============ */
+const IT={};
+const AB={lit:'문해력',voc:'어휘력',inf:'추론력',cri:'분석력',spd:'정보 처리 속도'};
+/* 트로피 분야 = 플레이 카테고리 */
+const FIELD={case:'사건 파일',read:'흥미로운 글',puzzle:'퍼즐',study:'공부하고 시험 보기',quick:'빠른 퀴즈'};
+function fieldOf(k){if(k.startsWith('case-'))return'case';if(k.startsWith('read-'))return'read';if(k.startsWith('pz-'))return'puzzle';if(k.startsWith('test-'))return'study';return'quick'}
+const reg=(arr,setId)=>arr.forEach(x=>{x.setId=setId;x.field=fieldOf(setId);IT[x.id]=x});
+
+const READS=[
+{id:'r1',title:'새벽 2시에 보낸 메시지가 부끄러운 이유',tag:'뇌과학',body:[
+ '밤늦게 친구에게 길고 진지한 메시지를 보낸 뒤, 다음 날 아침 그 메시지를 다시 읽고 이불을 걷어찬 경험이 있을 것이다. 이런 일이 생기는 데에는 이유가 있다.',
+ '우리 뇌의 앞쪽에 있는 전전두엽은 계획을 세우고, 감정을 조절하고, 말과 행동을 절제하는 일을 맡는다. 연구자들은 잠이 부족하거나 몹시 피곤할 때 이 부분의 기능이 평소보다 떨어진다고 설명한다. 반면 감정과 관련된 반응은 피로할수록 오히려 커지기 쉽다.',
+ '그래서 밤에는 작은 서운함도 크게 느껴지고, 그 감정을 그대로 글로 옮기게 된다. 문제는 아침이 되면 충분히 쉰 뇌가 같은 글을 훨씬 냉정하게 읽는다는 점이다. 어젯밤의 나와 오늘 아침의 나는, 같은 글을 전혀 다르게 읽는 두 명의 독자인 셈이다.'],
+items:[
+ {id:'r1-1',type:'mc',ab:'lit',kind:'내용 이해',q:'윗글의 내용과 일치하는 것은?',opts:['전전두엽은 감정을 더 크게 느끼게 만드는 곳이다.','피곤할수록 감정 반응은 줄어들고 판단력은 좋아진다.','피로하면 말과 행동을 절제하는 기능이 평소보다 떨어질 수 있다.','아침에 다시 읽은 글은 밤보다 더 감정적으로 느껴진다.'],ans:2,exp:'2문단에서 전전두엽이 ‘절제’를 맡고, 피곤할 때 그 기능이 떨어진다고 했어요. ①은 역할을 거꾸로 말했고, ②④는 글과 반대예요.'},
+ {id:'r1-2',type:'mc',ab:'voc',kind:'어휘',q:'‘말과 행동을 절제하는 일’에서 ‘절제’의 뜻으로 알맞은 것은?',opts:['정도를 넘지 않게 알맞게 조절함','어떤 일을 완전히 끊어 버림','물건을 잘라서 나눔','남의 행동을 대신함'],ans:0,exp:'절제(節制)는 ‘정도를 넘지 않도록 알맞게 조절하여 제한함’이에요. 완전히 끊는 건 ‘단절’에 가까워요.'},
+ {id:'r1-3',type:'mc',ab:'inf',bonus:true,kind:'추론',q:'글쓴이의 설명을 바탕으로 할 때, 가장 현명한 행동은?',opts:['감정이 클 때 쓴 중요한 메시지는 저장해 두고 아침에 다시 읽은 뒤 보낸다.','밤에는 솔직해지므로 중요한 말은 밤에 보내는 것이 좋다.','전전두엽을 쓰지 않도록 메시지를 짧게 쓴다.','아침에는 감정이 없으므로 아침에만 대화한다.'],ans:0,exp:'밤엔 감정이 커지고 절제 기능이 약해지며, 아침엔 같은 글을 냉정하게 읽는다고 했어요. 그러니 ‘아침에 다시 읽기’가 글에서 끌어낼 수 있는 결론이에요.'},
+ {id:'r1-4',type:'mc',ab:'cri',bonus:true,kind:'비판적 사고',q:'윗글에 던질 수 있는 가장 날카로운 질문은?',opts:['밤에 일하고 낮에 자는 사람에게도 ‘밤’ 이야기가 똑같이 맞을까?','전전두엽은 정말 뇌의 앞쪽에 있을까?','메시지는 글로 쓰는 것일까?','아침이 오면 해가 뜰까?'],ans:0,exp:'글의 핵심은 시간 자체가 아니라 ‘피로’예요. 그런데 글은 ‘밤 = 피곤함’을 당연하게 전제해요. 그 전제를 겨누는 질문이 가장 날카로워요.'}
+]},
+{id:'r2',title:'급식 메뉴 투표, 정말 공정했을까',tag:'학교 생활',body:[
+ '○○고 학생회는 다음 달 특식 메뉴를 정하려고 온라인 투표를 열었다. 후보는 마라탕, 치킨마요덮밥, 떡볶이 세 가지였다. 투표 링크는 학생회 인스타그램과 1학년 단체 대화방에 올라갔다.',
+ '사흘 뒤 결과가 나왔다. 전교생 900명 중 120명이 참여했고, 그중 72명(60%)이 마라탕을 골랐다. 학생회장은 “전교생의 60%가 마라탕을 원한다”고 발표했다.',
+ '그러자 2·3학년 게시판에는 “투표가 있는 줄도 몰랐다”는 글이 이어졌다. 한 3학년 학생은 “표본이 특정 학년에 쏠려 있는데 어떻게 전교생의 뜻이라고 할 수 있느냐”고 물었다.'],
+items:[
+ {id:'r2-1',type:'mc',ab:'lit',kind:'정보 처리',q:'투표에 참여한 학생은 전교생의 약 몇 %인가?',opts:['약 8%','약 13%','약 60%','약 72%'],ans:1,exp:'900명 중 120명이니 120÷900 ≈ 13%. 60%는 ‘참여자 중’ 마라탕을 고른 비율이라 헷갈리기 쉬워요.'},
+ {id:'r2-2',type:'mc',ab:'voc',kind:'어휘',q:'‘표본이 특정 학년에 쏠려 있다’에서 ‘표본’의 뜻은?',opts:['전체의 성질을 알아보려고 그중 일부를 뽑은 것','투표에서 가장 많은 표를 얻은 후보','학생회가 정한 규칙','시험에서 모범이 되는 답안'],ans:0,exp:'통계에서 표본은 ‘전체를 짐작하려고 뽑은 일부’예요. 여기서는 투표에 참여한 120명이 표본이에요.'},
+ {id:'r2-3',type:'mc',ab:'inf',bonus:true,kind:'추론',q:'결과가 전교생의 의견을 대표하기 어려운 가장 큰 이유는?',opts:['후보 메뉴가 세 개뿐이었다.','투표 기간이 사흘이었다.','링크가 주로 1학년 대화방에 퍼져 참여자가 1학년에 쏠렸을 가능성이 크다.','마라탕은 매운 음식이다.'],ans:2,exp:'링크가 퍼진 길이 1학년 대화방이었고, 2·3학년은 투표가 있는 줄도 몰랐어요. 참여자 자체가 한쪽으로 쏠린 게 핵심이에요.'},
+ {id:'r2-4',type:'mc',ab:'cri',bonus:true,kind:'비판적 사고',q:'학생회장의 발표에서 잘못된 부분은?',opts:['참여자 120명 중 60%를 전교생 900명의 60%인 것처럼 말했다.','마라탕을 후보에 넣었다.','결과를 사흘 뒤에 발표했다.','인스타그램에 링크를 올렸다.'],ans:0,exp:'마라탕을 고른 72명은 전교생의 8%예요. 일부의 비율을 전체의 비율로 바꿔 말한 ‘과잉 일반화’예요.'}
+]},
+{id:'r3',title:'사흘은 3일일까, 4일일까',tag:'우리말',body:[
+ '몇 년 전, 한 기사 제목의 ‘사흘 연휴’를 두고 인터넷이 떠들썩했다. “3일인데 왜 사흘이라고 하느냐”는 댓글이 줄을 이었다. ‘사흘’의 ‘사’를 숫자 4(四)로 착각한 것이다.',
+ '우리말에는 날짜를 세는 고유어가 있다. 하루, 이틀, 사흘, 나흘, 닷새, 엿새, 이레, 여드레, 아흐레, 열흘. 여기서 ‘사흘’은 3일, ‘나흘’은 4일이다.',
+ '비슷한 일은 또 있었다. 어느 업체가 ‘심심한 사과의 말씀을 드린다’고 공지하자 “사과하면서 심심하다니 무슨 뜻이냐”는 반응이 나왔다. 여기서 ‘심심(甚深)하다’는 ‘마음의 표현 정도가 매우 깊고 간절하다’는 뜻이다. 이런 일이 있을 때마다 ‘요즘 사람들 문해력이 떨어졌다’는 말이 나오지만, 낱말 몇 개를 모르는 것과 글 전체를 이해하는 능력이 부족한 것은 따로 따져 볼 문제다.'],
+items:[
+ {id:'r3-1',type:'mc',ab:'lit',kind:'내용 이해',q:'‘나흘’은 며칠인가?',opts:['3일','4일','5일','6일'],ans:1,exp:'하루(1)·이틀(2)·사흘(3)·나흘(4)·닷새(5) 순서예요.'},
+ {id:'r3-2',type:'mc',ab:'voc',kind:'어휘',q:'‘심심한 사과’에서 ‘심심하다’의 뜻은?',opts:['할 일이 없어 지루하다','음식 맛이 싱겁다','마음의 표현 정도가 매우 깊고 간절하다','마음이 가볍고 편하다'],ans:2,exp:'소리만 같은 다른 단어예요. 甚(심할 심) + 深(깊을 심) = ‘매우 깊다’.'},
+ {id:'r3-3',type:'mc',ab:'inf',bonus:true,kind:'추론',q:'‘4월 1일부터 열흘간 할인’이라면 할인 마지막 날은?',opts:['4월 9일','4월 10일','4월 11일','4월 14일'],ans:1,exp:'열흘은 10일. 1일을 포함해 10일을 세면 4월 10일이 마지막 날이에요.'},
+ {id:'r3-4',type:'mc',ab:'cri',bonus:true,kind:'비판적 사고',q:'글쓴이가 마지막 문장에서 말하려는 것과 가장 가까운 것은?',opts:['낱말 몇 개를 모른다고 문해력 전체가 낮다고 단정하기는 어렵다.','요즘 사람들의 문해력은 확실히 떨어졌다.','고유어는 쓰지 않는 것이 좋다.','한자어는 모두 외워야 한다.'],ans:0,exp:'‘따로 따져 볼 문제’가 핵심 표현이에요. 어휘를 모르는 것과 독해 능력을 구분하자는 말이에요.'}
+]}
+];
+
+const chat=lines=>'<div class="chat">'+lines.map(l=>l[0]==='sys'?`<div class="sys">${l[1]}</div>`:`<div class="bub ${l[1]}"><small>${l[0]}</small>${l[2]}</div>`).join('')+'</div>';
+const suspects=(intro,list)=>`<div class="ctx"><p>${intro}</p></div><div class="ctx" style="margin-top:8px">`+list.map(s=>`<div class="suspect"><div class="av">${s[0][0]}</div><div><b>${s[0]}</b><div>“${s[1]}”</div>${s[2]?`<div class="note">${s[2]}</div>`:''}</div></div>`).join('')+'</div>';
+
+const CASES={
+ crime:{title:'범인 찾기',sub:'진술 속 모순을 찾아 범인을 지목해요',items:[
+  {id:'k1',type:'mc',ab:'inf',kind:'사라진 무선 이어폰',ctx:suspects('점심시간이 끝나자 반장 지우의 무선 이어폰이 사라져 있었다. <b>점심시간 내내 교실에 남아 있던 사람은 네 명.</b> 네 명 중 단 한 명만 거짓말을 하고 있고, 그 사람이 범인이다.',[
+   ['민준','나는 점심시간 내내 창가 자리에서 잤어. 서연이가 봤어.'],
+   ['서연','민준이는 계속 자고 있었어. 하준이가 지우 자리 근처에 가는 건 봤어.'],
+   ['하준','지우 자리 근처에 간 건 맞아. 내 자리가 바로 지우 옆이라 필통 가지러 간 거야.'],
+   ['예린','나는 점심시간에 교실에 없었어. 계속 도서관에 있었다고.']]),
+   q:'범인은 누구일까?',opts:['민준','서연','하준','예린'],ans:3,exp:'사건 설명에 ‘점심시간 내내 교실에 남아 있던 사람은 네 명’이라고 했어요. 그런데 예린은 교실에 없었다고 해요. 사건의 전제와 부딪히는 진술은 예린의 말뿐이고, 나머지 세 명의 말은 서로 맞물려요.'},
+  {id:'k2',type:'mc',ab:'inf',kind:'찢어진 축제 포스터',ctx:suspects('2층 복도 게시판의 축제 포스터가 찢긴 채 발견됐다. 복도 CCTV를 보면 <b>4시 18분까지는 멀쩡했고 4시 20분에는 찢겨 있었다.</b> 학교 앞 편의점에서 2층 복도까지는 걸어서 3분이다.',[
+   ['도윤','4시부터 4시 30분까지 방송부실에서 장비 정리했어.','방송부 선생님이 함께 있었다고 확인함'],
+   ['하은','나는 4시 15분에 편의점에 있었어. 영수증도 있어.','영수증 시각 16:15'],
+   ['시우','나는 4시 20분에 집에 도착했어. 학교에서 집까지 버스로 30분 걸려.','집 현관 도어락 기록 16:20']]),
+   q:'포스터가 찢긴 시각에 확실한 알리바이가 없는 사람은?',opts:['도윤','하은','시우','세 명 모두 알리바이가 있다'],ans:1,exp:'포스터는 4시 18~20분 사이에 찢겼어요. 하은은 4시 15분에 편의점에 있었지만 3분이면 2층에 올 수 있으니 시간이 충분해요. 도윤은 선생님이, 시우는 도어락 기록이 확인해 줘요. 단, 알리바이가 없다고 곧 범인인 것은 아니에요.'}
+ ]},
+ chat:{title:'대화 판정',sub:'커플·친구 대화에서 누가, 왜 엇갈렸는지 가려요',items:[
+  {id:'t1',type:'mc',ab:'cri',kind:'커플 대화 · 영화 약속',ctx:'<div class="ctx">'+chat([['지호','l','토요일 2시 영화 예매했어!'],['수아','r','오 좋아 그럼 2시에 보자 ㅎㅎ'],['sys','토요일 오후 1시 55분'],['지호','l','나 영화관 앞이야. 곧 시작인데 어디야??'],['수아','r','응? 2시에 만나는 거 아니었어? 나 지금 버스 안이야'],['지호','l','2시 영화라고 했잖아…']])+'</div>',
+   q:'이 대화에서 오해가 생긴 가장 큰 이유는?',opts:['지호가 너무 일찍 도착했다.','수아가 영화 시간을 잊어버렸다.','‘2시’가 영화 시작 시간인지 만나는 시간인지 둘 다 확인하지 않았다.','영화를 토요일로 예매했다.'],ans:2,exp:'지호는 ‘2시 = 영화 시작’, 수아는 ‘2시에 보자 = 만나는 시간’으로 읽었어요. 같은 문장을 다르게 해석한 거라 둘 다 확인이 필요했어요. 예: “1시 40분에 매표소 앞에서 만나자.”'},
+  {id:'t2',type:'mc',ab:'lit',kind:'반 단톡 · 수행평가',ctx:'<div class="ctx"><p><span class="tag hl">공지</span> <b>국어 수행평가 안내</b><br>· 보고서는 A4 2쪽 이내<br>· 참고한 자료의 출처를 반드시 밝힐 것<br>· 11월 20일(금) 1교시 수업 시작 전까지 제출</p></div><div class="ctx" style="margin-top:8px">'+chat([['은우','l','20일까지면 그날 밤 12시 전에만 내면 되는 거지?'],['다인','r','ㅇㅇ 그날 안에만 내면 될 듯. 난 3쪽 정도 쓰려고'],['은우','l','출처는 그냥 ‘인터넷’이라고 쓰면 되겠다']])+'</div>',
+   q:'안내문을 제대로 읽지 않은 사람은?',opts:['은우만','다인만','은우와 다인 둘 다','아무도 없다'],ans:2,exp:'마감은 ‘20일 밤’이 아니라 ‘1교시 수업 시작 전’이에요(둘 다 놓침). 다인은 ‘2쪽 이내’를 어길 예정이고, 은우처럼 ‘인터넷’이라고만 쓰면 출처를 밝힌 게 아니에요.'}
+ ]},
+ persuade:{title:'설득 작전',sub:'상대의 걱정을 읽고 마음을 움직이는 말을 골라요',items:[
+  {id:'p1',type:'mc',ab:'cri',kind:'부모님 설득',ctx:'<div class="ctx"><p><b>상황</b> 토요일에 친구 두 명과 놀이공원에 가고 싶다. 부모님은 “애들끼리 멀리 가는 건 좀…” 하며 걱정하신다.</p></div>',
+   q:'부모님을 설득할 가능성이 가장 높은 메시지는?',opts:['다른 애들은 다 가는데 나만 못 가. 진짜 너무해.','토요일 10시~6시, 민수·지훈이랑 갈게요. 지하철로 가고, 입장권은 모은 용돈으로 내요. 도착하면 연락하고, 출발할 때 또 연락드릴게요.','제발 한 번만 보내 주세요. 앞으로 말 잘 들을게요.','공부 열심히 했으니까 보상으로 가야 해요.'],ans:1,exp:'부모님의 걱정은 ‘안전’이에요. ②는 누구와, 언제, 어떻게 가는지, 돈과 연락은 어떻게 하는지를 먼저 답해서 걱정을 줄여 줘요. 설득은 내 마음보다 상대의 걱정에 답할 때 강해져요.'},
+  {id:'p2',type:'mc',ab:'cri',kind:'학급 회의 설득',ctx:'<div class="ctx"><p><b>상황</b> 교실 에어컨 온도로 반이 둘로 나뉘었다. 창가 쪽은 덥다며 20도를, 복도 쪽은 춥다며 26도를 원한다. 너는 반장이다.</p></div>',
+   q:'가장 설득력 있는 제안은?',opts:['다수결로 정하자. 많은 쪽이 이기는 거야.','선생님이 정해 주실 때까지 기다리자.','중간인 23도로 맞추고 바람은 창가 쪽으로, 추운 친구는 겉옷을 입자. 일주일 해 보고 다시 이야기하자.','더운 사람이 참는 게 맞아. 추우면 감기 걸리니까.'],ans:2,exp:'양쪽의 불편을 모두 줄이는 구체적인 방법, 시험 기간(일주일), 다시 조정할 기회까지 담겼어요. 모두가 ‘내 말도 들어줬다’고 느끼게 하는 제안이 설득력이 커요.'}
+ ]},
+ exam:{title:'오답 탐정',sub:'시험지 속 틀린 답, 진짜 이유를 찾아요',items:[
+  {id:'e1',type:'mc',ab:'cri',kind:'국어 시험지',ctx:'<div class="exam"><p><b>[지문]</b> 고래는 바다에 살지만 물고기가 아니라 포유류다. 새끼를 낳아 젖을 먹이고, 아가미가 아닌 폐로 숨을 쉰다.</p><p><b>3. 윗글의 내용과 일치하지 <u>않는</u> 것은?</b><br>① 고래는 포유류이다.<br>② 고래는 새끼에게 젖을 먹인다.<br>③ 고래는 폐로 숨을 쉰다.<br>④ 고래는 아가미로 숨을 쉰다.</p><p>학생의 답: ③ <span class="stamp">✕</span></p></div>',
+   q:'이 학생이 틀린 가장 큰 이유는?',opts:['고래에 대한 지식이 부족했다.','발문의 ‘않는’을 놓치고 일치하는 것을 골랐다.','지문이 너무 길었다.','선택지 ④를 이해하지 못했다.'],ans:1,exp:'③은 지문과 일치하는 내용이에요. ‘일치하지 않는 것’을 묻는데 일치하는 걸 골랐다는 건, 발문을 끝까지 읽지 않았다는 신호예요. 팁: ‘않는·아닌·옳지 않은’에는 동그라미!'},
+  {id:'e2',type:'mc',ab:'cri',kind:'수학 시험지',ctx:'<div class="exam"><p><b>5.</b> 사과 12개를 3명이 똑같이 나누어 가진 뒤, 각자 1개씩 먹었다. 남은 사과는 <b>모두</b> 몇 개인가?</p><p>학생의 풀이: 12 ÷ 3 = 4, 4 − 1 = 3<br>학생의 답: 3개 <span class="stamp">✕</span></p></div>',
+   q:'학생이 틀린 이유는?',opts:['나눗셈을 잘못했다.','‘모두’를 놓치고 한 사람이 가진 사과만 셌다.','먹은 사과를 빼지 않았다.','문제에 오류가 있다.'],ans:1,exp:'계산은 맞았어요. 하지만 ‘모두’는 세 사람 것을 합친 개수라 3 × 3 = 9개. 계산이 아니라 읽기에서 틀린 문제예요.'}
+ ]}
+};
+
+const ORDERS=[
+ {id:'o1',type:'order',ab:'inf',kind:'문장 퍼즐',title:'수학여행 알람 사건',parts:['내일 아침 7시에 수학여행 버스가 출발한다.','그래서 나는 알람을 세 개나 맞춰 두었다.','그런데 아침에 나를 깨운 건 엄마의 목소리였다.','알람 세 개가 모두 오후 7시로 맞춰져 있었던 것이다.'],exp:'‘그래서’는 앞 문장의 결과, ‘그런데’는 예상과 다른 전개, 마지막 문장은 그 이유를 밝혀요.'},
+ {id:'o2',type:'order',ab:'inf',kind:'문장 퍼즐',title:'라면 끓이기',parts:['라면 끓이는 순서는 생각보다 간단하다.','먼저 냄비에 물 550mL를 붓고 끓인다.','물이 끓으면 면과 스프를 함께 넣는다.','4분 30초 뒤 불을 끄고 그릇에 옮긴다.'],exp:'주제 문장 → ‘먼저’ → ‘끓으면’ → ‘뒤’. 시간 순서를 알려 주는 말이 힌트예요.'},
+ {id:'o3',type:'order',ab:'inf',kind:'문장 퍼즐',title:'밤샘 공부의 함정',parts:['시험 전날 밤을 새우는 학생이 많다.','한 글자라도 더 보고 싶은 마음 때문이다.','하지만 잠을 줄이면 공부한 내용이 기억으로 정리되는 시간도 줄어든다.','결국 공부 시간은 늘었는데 기억에 남는 양은 오히려 줄어들 수 있다.'],exp:'현상 → 이유(‘때문이다’) → 반론(‘하지만’) → 결론(‘결국’). 글의 뼈대가 보이면 순서가 보여요.'}
+];
+const MATCHES=[
+ {id:'m1',type:'match',ab:'voc',kind:'단어 퍼즐',title:'날짜·시간을 나타내는 말',pairs:[['사흘','3일'],['금일','오늘'],['명일','내일'],['중식','점심 식사']],exp:'안내문·공지에 자주 나오는 말이에요. ‘금일 휴무’, ‘중식 제공’처럼요.'},
+ {id:'m2',type:'match',ab:'voc',kind:'단어 퍼즐',title:'헷갈리는 생각의 말',pairs:[['고지식하다','융통성이 없다'],['위화감','어울리지 않는 어색한 느낌'],['시사하다','간접적으로 미리 알려 주다'],['가늠하다','헤아려 짐작해 보다']],exp:'뉴스와 비문학 지문에 자주 나와요. 예문으로 한 번씩 소리 내 읽어 보세요.'}
+];
+const GRAMS=[
+ {id:'g1',type:'mc',ab:'voc',kind:'문법 퍼즐',shuf:true,q:'편의점에서 카드로 ___했다.',opts:['결제','결재'],ans:0,exp:'돈을 치르는 건 ‘결제’, 윗사람이 안건을 허가하는 건 ‘결재’예요.'},
+ {id:'g2',type:'mc',ab:'voc',kind:'문법 퍼즐',shuf:true,q:'퀴즈 정답을 모두 ___.',opts:['맞혔다','맞췄다'],ans:0,exp:'정답을 골라내는 건 ‘맞히다’, 둘을 비교하거나 짝을 맞게 하는 건 ‘맞추다’(답을 맞추다 = 답을 서로 비교하다).'},
+ {id:'g3',type:'mc',ab:'voc',kind:'문법 퍼즐',shuf:true,q:'가___ 말___ 네 마음대로 해.',opts:['든지 / 든지','던지 / 던지'],ans:0,exp:'고르는 건 ‘-든지’, 지난 일을 떠올리는 건 ‘-던지’(얼마나 춥던지).'},
+ {id:'g4',type:'mc',ab:'voc',kind:'문법 퍼즐',shuf:true,q:'내 ___은 모두가 건강한 것이다.',opts:['바람','바램'],ans:0,exp:'‘바라다’의 명사형은 ‘바람’이에요. ‘바램’은 색이 바래다의 명사형.'},
+ {id:'g5',type:'mc',ab:'voc',kind:'문법 퍼즐',shuf:true,q:'아이스크림이 ___ 녹아 버렸다.',opts:['금세','금새'],ans:0,exp:'‘금시에’가 줄어든 말이라 ‘금세’예요.'}
+];
+const BLANKS=[
+ {id:'b1',type:'mc',ab:'inf',kind:'빈칸 추론',q:'비가 많이 내렸다. ___ 소풍은 예정대로 진행되었다.',opts:['그래서','그러나','게다가','예를 들어'],ans:1,exp:'비가 왔는데 진행됐다 → 앞뒤가 반대로 이어지니 ‘그러나’.'},
+ {id:'b2',type:'mc',ab:'inf',kind:'빈칸 추론',q:'민지는 한 달 동안 매일 단어 20개를 외웠다. ___ 단어 시험에서 처음으로 만점을 받았다.',opts:['그 결과','하지만','반면에','그런데도'],ans:0,exp:'노력 → 결과로 이어지니 ‘그 결과’.'},
+ {id:'b3',type:'mc',ab:'inf',kind:'빈칸 추론',q:'이 앱은 공부를 게임처럼 만든다. ___ 문제를 맞히면 경험치를 주고, 친구와 순위를 겨루게 한다.',opts:['예를 들어','그럼에도','왜냐하면','결국'],ans:0,exp:'앞 문장을 구체적인 사례로 풀어 주니 ‘예를 들어’.'},
+ {id:'b4',type:'mc',ab:'inf',kind:'빈칸 추론',q:'좋은 질문은 좋은 답보다 중요할 때가 있다. 질문이 바뀌면 ___ 바뀌기 때문이다.',opts:['답을 찾는 방향도','시험 시간도','친구의 수도','글씨체도'],ans:0,exp:'질문이 답보다 중요한 이유 → 질문이 생각의 방향을 정하기 때문.'}
+];
+
+const WORDS=[
+ {w:'사흘',m:'세 날. 3일',ex:'시험까지 사흘 남았다.'},
+ {w:'금일',m:'오늘',ex:'금일 오후 5시까지 제출하세요.'},
+ {w:'명일',m:'내일',ex:'명일은 휴관합니다.'},
+ {w:'심심하다(甚深)',m:'마음의 표현 정도가 매우 깊고 간절하다',ex:'심심한 감사의 뜻을 전합니다.'},
+ {w:'무운',m:'싸움에서 이기고 지는 운수',ex:'결승에 나가는 선수들의 무운을 빈다.'},
+ {w:'고지식하다',m:'성질이 외곬으로 곧아 융통성이 없다',ex:'그는 규칙을 고지식하게 지킨다.'},
+ {w:'위화감',m:'조화되지 못하고 어색한 느낌',ex:'혼자만 정장을 입어 위화감이 들었다.'},
+ {w:'일절',m:'아주, 전혀 (주로 부정하는 말과 함께)',ex:'외부 음식 반입을 일절 금합니다.'}
+];
+const EXTRA_WORDS=[
+ {w:'중식',m:'점심 식사',ex:'행사 참가자에게 중식을 제공합니다.'},
+ {w:'시사하다',m:'어떤 것을 미리 간접적으로 표현해 주다',ex:'이번 결과는 많은 점을 시사한다.'},
+ {w:'가늠하다',m:'기준에 맞는지 헤아려 보다',ex:'거리를 눈으로 가늠해 보았다.'},
+ {w:'의아하다',m:'의심스럽고 이상하다',ex:'갑작스러운 침묵이 의아했다.'},
+ {w:'우천 시',m:'비가 올 때',ex:'우천 시 행사는 강당에서 진행합니다.'},
+ {w:'익일',m:'어느 날의 바로 다음 날',ex:'주문은 익일 배송됩니다.'},
+ {w:'금명간',m:'오늘이나 내일 사이',ex:'결과는 금명간 발표될 예정이다.'},
+ {w:'상이하다',m:'서로 다르다',ex:'두 사람의 진술이 상이하다.'},
+ {w:'지양하다',m:'더 높은 단계로 가기 위해 하지 않도록 피하다',ex:'과도한 경쟁은 지양해야 한다.'},
+ {w:'지향하다',m:'어떤 목표로 뜻이 쏠려 향하다',ex:'우리 동아리는 즐거운 배움을 지향한다.'},
+ {w:'기재하다',m:'문서에 적다',ex:'신청서에 연락처를 기재하세요.'},
+ {w:'수령',m:'돈이나 물건을 받음',ex:'택배를 수령했다.'},
+ {w:'동봉',m:'봉투 안에 함께 넣어 보냄',ex:'영수증을 동봉해 보냈다.'},
+ {w:'재고하다',m:'어떤 일이나 문제를 다시 생각하다',ex:'그 결정은 재고할 필요가 있다.'},
+ {w:'간과하다',m:'큰 관심 없이 대강 보아 넘기다',ex:'작은 실수를 간과하면 안 된다.'},
+ {w:'역설하다',m:'자기의 뜻을 힘주어 말하다',ex:'선생님은 독서의 중요성을 역설하셨다.'},
+ {w:'함의',m:'말이나 글 속에 어떠한 뜻이 들어 있음',ex:'그 말에 담긴 함의를 생각해 보자.'},
+ {w:'차치하다',m:'내버려 두고 문제 삼지 않다',ex:'비용은 차치하더라도 시간이 부족하다.'},
+ {w:'도외시하다',m:'상관하지 않거나 무시하다',ex:'안전을 도외시한 계획이다.'},
+ {w:'결부하다',m:'일정한 사물이나 현상을 서로 연관시키다',ex:'모든 일을 성적과 결부할 필요는 없다.'},
+ {w:'일환',m:'서로 관계있는 것들 중의 한 부분',ex:'이번 행사는 독서 캠페인의 일환이다.'},
+ {w:'호도하다',m:'명확하게 하지 않고 흐지부지 덮어 버리다',ex:'사실을 호도해서는 안 된다.'}
+];
+const ALLW=WORDS.concat(EXTRA_WORDS);
+function dailyWords(){let s=(gidx()*9301+49297)%233280;const r=()=>{s=(s*9301+49297)%233280;return s/233280};const a=ALLW.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,10)}
+
+const PROVS=[
+ {p:'소 잃고 외양간 고친다',m:'일이 잘못된 뒤에 손을 써도 소용없다',s:'시험이 끝난 다음 날부터 공부 계획표를 짜기 시작했다.'},
+ {p:'가는 말이 고와야 오는 말이 곱다',m:'내가 좋게 말해야 남도 좋게 말한다',s:'친구에게 짜증 섞인 말투로 부탁했더니 친구도 퉁명스럽게 대답했다.'},
+ {p:'우물 안 개구리',m:'넓은 세상을 알지 못하는 사람',s:'반에서 1등이라 최고인 줄 알았는데, 전국 대회에 나가 보니 잘하는 사람이 너무 많았다.'},
+ {p:'티끌 모아 태산',m:'작은 것도 모이면 큰 것이 된다',s:'하루에 단어 5개씩 외웠더니 1년 뒤 1,800개가 넘었다.'},
+ {p:'등잔 밑이 어둡다',m:'가까이 있는 것을 오히려 잘 모른다',s:'온 집안을 뒤져 찾던 휴대폰이 내 주머니에 있었다.'},
+ {p:'발 없는 말이 천 리 간다',m:'말은 순식간에 멀리 퍼진다',s:'점심시간에 한 친구에게만 말한 비밀이 저녁엔 반 전체에 퍼져 있었다.'},
+ {p:'원숭이도 나무에서 떨어질 때가 있다',m:'아무리 잘하는 사람도 실수할 때가 있다',s:'수학 1등인 친구가 쉬운 계산 문제를 틀렸다.'},
+ {p:'공든 탑이 무너지랴',m:'정성을 다한 일은 헛되지 않다',s:'석 달 동안 매일 연습한 덕분에 공연을 무사히 마쳤다.'}
+];
+const RULES=[
+ {k:'되 / 돼',r:'‘돼’는 ‘되어’의 줄임말. ‘되어’를 넣어 말이 되면 ‘돼’, 안 되면 ‘되’.',ex:'그러면 안 돼. (안 되어 ○)',q:'지각하면 안 ___.',o:['돼','되']},
+ {k:'안 / 않',r:'‘안’은 ‘아니’, ‘않’은 ‘아니하’의 줄임말. 빼고 읽어도 문장이 되면 ‘안’.',ex:'숙제를 안 했다 / 숙제를 하지 않았다',q:'오늘은 비가 오지 ___ 것 같다.',o:['않을','안을']},
+ {k:'왠지 / 웬',r:'‘왠지’는 ‘왜인지’의 줄임말. 나머지는 모두 ‘웬’(웬일, 웬만큼).',ex:'왠지 불안하다 / 이게 웬일이야',q:'___ 오늘은 좋은 일이 생길 것 같다.',o:['왠지','웬지']},
+ {k:'이따가 / 있다가',r:'‘이따가’는 ‘조금 지난 뒤에’, ‘있다가’는 ‘머무르다가’.',ex:'이따가 전화할게 / 집에 있다가 나갔다',q:'수업 끝나고 ___ 연락할게.',o:['이따가','있다가']},
+ {k:'어떻게 / 어떡해',r:'‘어떻게’는 방법을 묻는 말, ‘어떡해’는 ‘어떻게 해’의 줄임말.',ex:'이거 어떻게 풀어? / 시험 망쳤어, 어떡해',q:'휴대폰을 잃어버렸어. ___?',o:['어떡해','어떻게']},
+ {k:'로서 / 로써',r:'‘로서’는 자격·신분, ‘로써’는 수단·도구.',ex:'학생으로서 / 대화로써 해결하다',q:'반장___ 책임을 다하겠습니다.',o:['으로서','으로써']}
+];
+function mcShuf(correct,wrongs){const opts=shuffle([correct,...wrongs]);return{opts,ans:opts.indexOf(correct)}}
+const GEN={
+ word:()=>shuffle(WORDS).slice(0,5).map(w=>{const o=mcShuf(w.m,shuffle(WORDS.filter(x=>x!==w)).slice(0,3).map(x=>x.m));return{id:'tw-'+w.w,type:'mc',ab:'voc',kind:'단어 시험',q:`‘${w.w}’의 뜻으로 알맞은 것은?`,...o,exp:`${w.w}: ${w.m}. 예) ${w.ex}`}}),
+ prov:()=>shuffle(PROVS).slice(0,5).map(p=>{const o=mcShuf(p.p,shuffle(PROVS.filter(x=>x!==p)).slice(0,3).map(x=>x.p));return{id:'tp-'+p.p,type:'mc',ab:'voc',kind:'속담 시험',ctx:`<div class="ctx"><p>${p.s}</p></div>`,q:'이 상황에 가장 어울리는 속담은?',...o,exp:`${p.p}: ${p.m}.`}}),
+ gram:()=>shuffle(RULES).map(r=>{const o=mcShuf(r.o[0],[r.o[1]]);return{id:'tg-'+r.k,type:'mc',ab:'voc',kind:'문법 시험',q:r.q,...o,exp:r.r}})
+};
+
+const QUICK=[
+ ['사흘은 며칠?','3일','4일'],['나흘은 며칠?','4일','5일'],['‘금일’의 뜻은?','오늘','금요일'],['‘명일’의 뜻은?','내일','유명한 날'],
+ ['그러면 안 ___','돼','되'],['___ 기분이 좋다','왠지','웬지'],['시험 망쳤어 ___','어떡해','어떻게'],['정답을 ___','맞히다','맞추다'],
+ ['아이스크림이 ___ 녹았다','금세','금새'],['카드로 ___하다','결제','결재'],['‘심심한 사과’의 심심은?','매우 깊은','지루한'],['소 잃고 ___ 고친다','외양간','지붕'],
+ ['등잔 밑이 ___','어둡다','밝다'],['티끌 모아 ___','태산','부자'],['비가 왔다. ___ 소풍은 진행됐다','그러나','그래서'],['열심히 했다. ___ 합격했다','그 결과','그런데도'],
+ ['2, 4, 8, 16 다음은?','32','24'],['1, 1, 2, 3, 5, 8 다음은?','13','11'],['월, 수, 금 다음은?','일','토'],['모든 고래는 포유류. 포유류는 폐로 숨쉰다. 고래는?','폐로 숨쉰다','아가미로 숨쉰다'],
+ ['‘일치하지 않는 것은?’이면','틀린 내용을 고른다','맞는 내용을 고른다'],['반장___ 책임','으로서','으로써'],['내 ___은 건강이다','바람','바램'],['A>B, B>C. 가장 작은 것은?','C','A'],
+ ['‘중식 제공’의 중식은?','점심 식사','중국 음식'],['‘일절 금지’의 뜻은?','전혀 안 된다','일부만 안 된다'],['가___ 말___','든지 / 든지','던지 / 던지'],['3, 6, 9, 12 다음은?','15','14']
+];
+
+/* 세트 (limit = 문제당 제한 시간, 초) */
+const SETS={};
+READS.forEach(r=>{const id='read-'+r.id;reg(r.items,id);SETS[id]={id,title:r.title,sub:r.tag,intro:r,ids:r.items.map(x=>x.id)}});
+Object.entries(CASES).forEach(([k,c])=>{const id='case-'+k;reg(c.items,id);SETS[id]={id,title:c.title,sub:c.sub,ids:c.items.map(x=>x.id)}});
+reg(ORDERS,'pz-order');reg(MATCHES,'pz-word');reg(GRAMS,'pz-gram');reg(BLANKS,'pz-blank');
+SETS['pz-order']={id:'pz-order',title:'문장 퍼즐',sub:'뒤섞인 문장을 순서대로',limit:47,ids:ORDERS.map(x=>x.id)};
+SETS['pz-word']={id:'pz-word',title:'단어 퍼즐',sub:'단어와 뜻 짝 맞추기',limit:20,ids:MATCHES.map(x=>x.id)};
+SETS['pz-gram']={id:'pz-gram',title:'문법 퍼즐',sub:'헷갈리는 맞춤법 고르기',limit:7,ids:GRAMS.map(x=>x.id)};
+SETS['pz-blank']={id:'pz-blank',title:'빈칸 추론 퍼즐',sub:'앞뒤 흐름으로 빈칸 채우기',limit:13,ids:BLANKS.map(x=>x.id)};
+const TEST_LIMIT={word:10,prov:15,gram:10};
+['word','prov','gram'].forEach(k=>{const id='test-'+k;const items=GEN[k]();reg(items,id);SETS[id]={id,title:{word:'단어 시험',prov:'속담 시험',gram:'문법 시험'}[k],gen:k,limit:TEST_LIMIT[k],ids:items.map(x=>x.id)}});
+const STUDY={word:{title:'단어 공부',sub:'공지·뉴스에 나오는 헷갈리는 말',cards:WORDS.map(w=>({f:w.w,m:w.m,e:'예) '+w.ex}))},
+ prov:{title:'속담 공부',sub:'상황 속에서 익히는 속담',cards:PROVS.map(p=>({f:p.p,m:p.m,e:'이럴 때: '+p.s}))},
+ gram:{title:'문법 공부',sub:'제일 많이 틀리는 맞춤법 6개',cards:RULES.map(r=>({f:r.k,m:r.r,e:r.ex}))}};
+
+/* 잠긴 기능 */
+const LOCKED={
+ chain:{tag:'경쟁전 · 1:1',t:'끝말잇기 경쟁',d:'상대가 말한 단어의 끝 글자로 시작하는 단어를 이어 말해요.',r:['한 턴 30초 제한','사전에 있는 명사만 인정, 한 번 나온 단어는 다시 못 써요','두음법칙 허용 (력 → 역)','시간 안에 못 이으면 패배']},
+ rchain:{tag:'경쟁전 · 1:1',t:'앞말잇기 경쟁',d:'상대 단어의 첫 글자로 끝나는 단어를 말해요. 끝말잇기를 거꾸로 하는 셈이에요.',r:['한 턴 30초 제한','예) 기차 → 일기 → 휴일','거꾸로 떠올려야 해서 어휘 순발력이 더 필요해요']},
+ async:{tag:'경쟁전 · 비동기',t:'비동기 대결',d:'실시간으로 함께 접속하지 않아도 되는 점수 돌파 대결이에요.',r:['먼저 푼 사람의 점수가 기록돼요','랜덤 플레이어나 친구가 같은 문제로 그 점수를 넘으면 승리','넘지 못하면 패배','상대가 오프라인이어도 언제든 도전']},
+ speedrun:{tag:'경쟁전 · 시간 제한',t:'스피드런',d:'같은 문제 세트를 제한 시간 안에 더 많이, 더 정확하게 푸는 대결이에요.',r:['모두 같은 문제를 같은 순서로 풀어요','맞힌 문제 수가 많은 사람이 승리','맞힌 수가 같으면 더 빨리 푼 사람이 승리','오답은 감점이라 정확도도 중요해요']},
+ friendly:{tag:'경쟁전 · 친선',t:'친선전',d:'친구에게 대결을 신청해요. 랭크 점수는 바뀌지 않아요.',r:['끝말잇기·앞말잇기·스피드런 중 선택','결과는 친구와의 전적에만 기록']},
+ ranked:{tag:'경쟁전 · 랭크',t:'랜덤 경쟁 (랭크)',d:'같은 국가의 비슷한 실력 플레이어와 랜덤으로 매칭돼요.',r:['승리 시 최대 +45점, 패배 시 최대 −30점 (실제 점수는 경기 성과에 따라)','같은 티어 안(골드 II → 골드 I)은 0점에서 지면 바로 강등','티어가 바뀌는 강등전(골드 I → 실버 III)에서만 보호막이 대신 깨져요','티어가 바뀔 때마다(승급·강등 모두) 보호막 2개 새로 지급','시즌(2개월)마다 새로 배치']},
+ 'co-chosung':{tag:'협동',t:'협동 초성퀴즈',d:'팀이 함께 초성 문제를 풀어요.',r:['ㄱㅁ → 거미? 공무? 팀원이 번갈아 답을 제시','애매한 답은 커뮤니티 투표로 정답 판정','팀 점수로 함께 보상']},
+ 'co-story':{tag:'협동',t:'협동 문장 이어가기',d:'문장 성분 하나씩 턴을 돌아가며 붙여서 한 문장을 완성해요.',r:['한 턴에 문장 성분 하나만: 주어 → 목적어 → 서술어 …','예) 강아지가 / 내 숙제를 / 물고 뛰다가 / 선생님을 / 만났는데 / 칭찬받았다','앞 성분과 문법·뜻이 자연스럽게 이어져야 해요','완성된 문장은 커뮤니티 투표로 평가']},
+ 'co-nhaengsi':{tag:'협동',t:'협동 n행시',d:'턴을 돌아가며 한 줄씩 지어 n행시를 완성해요.',r:['제시어 글자 수만큼 한 사람이 한 줄씩','예) 문: 문제를 읽었는데 / 해: 해석이 안 된다 / 력(역): 역시 공부할 때다','두음법칙 허용 (력 → 역)','완성된 n행시는 커뮤니티 투표로 평가']},
+ 'chosung-duel':{tag:'경쟁전 · 1:1',t:'초성 퀴즈 대결',d:'초성 하나를 두고 해당하는 단어를 번갈아 말해요. 더 많이 말한 사람이 승리.',r:['예) ㄱㅁ → 거미 → 가면 → 고민 → 구매 …','한 턴 10초 안에 사전에 있는 단어 하나','이미 나온 단어는 다시 못 써요','못 이으면 그 턴에서 패배']},
+ 'co-puzzle':{tag:'협동',t:'협동 퍼즐',d:'각자 문장 조각을 하나씩 들고, 대화로 순서를 맞춰요.',r:['내 조각만 보이고 남의 조각은 안 보여요','채팅으로 설명해서 순서를 맞춰야 해요','설명하는 힘과 듣는 힘을 함께 훈련']},
+ 'co-quiz':{tag:'협동',t:'협동 퀴즈',d:'팀이 함께 문제를 풀고 점수를 합산해요.',r:['팀원마다 다른 분야 문제가 나와요','팀 합산 점수로 다른 팀과 순위 경쟁']},
+ guild:{tag:'소셜',t:'길드',d:'같은 학교나 관심사를 가진 친구들과 길드를 만들어요.',r:['길드 주간 퀘스트','길드 트로피 합산 랭킹','길드원 깨우기와 길드 대항전']},
+ 'wake-normal':{tag:'친구 깨우기',t:'일반 깨우기',d:'친구에게 간단한 알림을 보내요.',r:['친구 한 명당 하루 1번','예) “오늘 1분 퀴즈 했어?”']},
+ 'wake-streak':{tag:'친구 깨우기',t:'연속 깨우기',d:'며칠 동안 접속하지 않은 친구에게 알림을 보내요.',r:['3일 이상 안 들어온 친구에게만 표시','친구 한 명당 하루 1번']},
+ 'wake-together':{tag:'친구 깨우기',t:'함께하기 깨우기',d:'알림과 함께 같이 플레이하자고 신청해요. 1:1 경쟁 또는 협동 중에서 골라요.',r:['1:1 경쟁: 끝말잇기·앞말잇기·스피드런·비동기 대결','협동: 초성퀴즈·문장 이어가기·협동 퍼즐·협동 퀴즈','친구가 수락하면 바로 같은 방으로 연결']},
+ invite:{tag:'링크 초대',t:'실시간 도전장',d:'아직 이 플랫폼을 모르는 친구에게 링크를 보내 1:1 대결이나 협동을 신청해요.',r:['카톡·인스타 DM 등 어디로든 링크 전송','링크를 연 친구는 바로 대결·협동 화면으로 이동','끝나면 가입하고 기록을 이어 가도록 안내']},
+ post:{tag:'커뮤니티',t:'내 협동 플레이 올리기',d:'내가 팀과 플레이한 초성퀴즈 답, 이어 만든 문장, n행시를 올려 판정을 받아요.',r:['협동 플레이가 끝나면 바로 올릴 수 있어요','많은 사람이 판정할수록 결과가 확정돼요']}
+};
+const DUEL_MODES=[['chain','끝말잇기'],['rchain','앞말잇기'],['chosung-duel','초성 퀴즈'],['speedrun','스피드런'],['async','비동기 대결']];
+const COOP_MODES=[['co-chosung','협동 초성퀴즈'],['co-story','문장 이어가기'],['co-nhaengsi','n행시'],['co-puzzle','협동 퍼즐'],['co-quiz','협동 퀴즈']];
+
+/* 커뮤니티 예시 게시물 */
+const CHO_POSTS=[
+ {id:'c1',team:'추리왕민트 팀',ago:'12분 전',topic:'과일',cho:'ㅌㅁㅌ',ans:'토마토',q:'토마토를 ‘과일’ 정답으로 인정할까요?',v:[312,268]},
+ {id:'c2',team:'논리근육 팀',ago:'40분 전',topic:'스포츠',cho:'ㅂㄷ',ans:'바둑',q:'바둑을 ‘스포츠’ 정답으로 인정할까요?',v:[201,190]},
+ {id:'c3',team:'하루한문단 팀',ago:'1시간 전',topic:'동물',cho:'ㄱㄹ',ans:'공룡',q:'멸종한 공룡도 ‘동물’ 정답일까요?',v:[140,175]},
+ {id:'c4',team:'단어사냥꾼 팀',ago:'3시간 전',topic:'음료',cho:'ㅁ',ans:'물',q:'물을 ‘음료’ 정답으로 인정할까요?',v:[150,233]}
+];
+/* 문장 이어가기: 문장 성분 하나씩 이어 만든 결과 문장만 보여 준다 */
+const STORY_POSTS=[
+ {id:'s1',team:'문장수집가 팀',ago:'25분 전',n:6,text:'강아지가 내 숙제를 물고 뛰다가 선생님을 만났는데 칭찬받았다.',v:[241,37]},
+ {id:'s2',team:'논리근육 팀',ago:'1시간 전',n:6,text:'반장이 칠판을 지우다가 이상한 암호를 발견했는데 내 이름이었다.',v:[198,41]},
+ {id:'s3',team:'느긋한독자 팀',ago:'2시간 전',n:6,text:'고양이가 수학책을 읽다가 떡볶이를 먹었는데 화요일이었다.',v:[66,173]}
+];
+const POEM_POSTS=[
+ {id:'n1',team:'단어사냥꾼 팀',ago:'15분 전',word:'문해력',lines:[['문','문제를 읽었는데'],['해','해석이 안 된다'],['력(역)','역시 이 앱을 켤 때가 됐다']],v:[287,54]},
+ {id:'n2',team:'하루한문단 팀',ago:'50분 전',word:'급식실',lines:[['급','급하게 뛰어갔는데'],['식','식판이 이미 바닥났다'],['실','실화냐…']],v:[312,29]},
+ {id:'n3',team:'추리왕민트 팀',ago:'3시간 전',word:'수행평가',lines:[['수','수요일까지 내라고 했는데'],['행','행복하게 놀다 보니'],['평','평일이 다 지나갔고'],['가','가방엔 빈 종이뿐이다']],v:[203,61]}
+];
+
+/* 예시 데이터 (다른 사용자) */
+const FRIENDS=[{n:'민트초코',t:'골드 III',last:'지금 접속 중',on:1},{n:'지훈',t:'실버 II',last:'3일째 미접속',away:3},{n:'서윤',t:'플래티넘 I',last:'1시간 전'},{n:'도현',t:'브론즈 III',last:'6일째 미접속',away:6}];
+const PLAYERS=[{n:'추리왕민트',tro:{case:96,read:40,puzzle:31,study:15,quick:22}},{n:'문장수집가',tro:{case:30,read:88,puzzle:45,study:40,quick:20}},{n:'단어사냥꾼',tro:{case:14,read:25,puzzle:20,study:71,quick:35}},{n:'논리근육',tro:{case:52,read:33,puzzle:70,study:10,quick:18}},{n:'하루한문단',tro:{case:10,read:15,puzzle:8,study:9,quick:6}},{n:'느긋한독자',tro:{case:6,read:9,puzzle:11,study:4,quick:5}}];
+const SEASON_TOP=[{n:'새벽세시독서',t:'그랜드마스터 III',p:812},{n:'추리왕민트',t:'초월자 III',p:74},{n:'문장수집가',t:'초월자 II',p:51},{n:'논리근육',t:'다이아몬드 III',p:88},{n:'단어사냥꾼',t:'다이아몬드 II',p:40}];
+const TIERS=[['브론즈','#b0703c'],['실버','#a3abbd'],['골드','#e0a91b'],['플래티넘','#2fb5a3'],['다이아몬드','#4f7cff'],['초월자','#8b4fe0'],['그랜드마스터','#d23f35']];
+const DIV=['I','II','III'];  /* I이 가장 낮고 III가 가장 높음 */
+const tierName=i=>TIERS[Math.floor(i/3)][0]+' '+DIV[i%3];
+
+/* 레벨·업적 */
+const T=n=>25*n*(n-1);
+const lvOf=xp=>{let n=1;while(T(n+1)<=xp)n++;return n};
+const LV_REW=[{lv:2,k:'title',v:'생각 새싹'},{lv:3,k:'frame',v:'ink',l:'잉크 테두리'},{lv:4,k:'title',v:'문장 탐험가'},{lv:5,k:'frame',v:'hl',l:'형광 테두리'},{lv:6,k:'title',v:'추리꾼'},{lv:8,k:'frame',v:'star',l:'별빛 테두리'},{lv:10,k:'title',v:'명탐정'}];
+const ACH=[
+ {id:'firstRead',t:'첫 글 완독',d:'흥미로운 글 1편 끝까지 풀기',p:()=>[S.st.reads,1]},
+ {id:'detective',t:'사건 해결사',d:'사건 파일 문제 5개 정답',p:()=>[S.st.caseOk,5],title:'사건 해결사'},
+ {id:'speed',t:'번개 손가락',d:'1분 퀴즈에서 15개 이상 정답',p:()=>[S.spd.best,15],title:'번개 손가락'},
+ {id:'streak7',t:'7일 연속',d:'7일 연속 학습하기',p:()=>[S.streak,7]},
+ {id:'quest',t:'퀘스트 완주',d:'하루 퀘스트 모두 끝내기',p:()=>[S.st.questDays,1]},
+ {id:'wordPerfect',t:'단어 만점',d:'단어 시험 만점 받기',p:()=>[S.st.wordPerfect?1:0,1]},
+ {id:'cleanNote',t:'오답 정복',d:'오답 노트를 모두 비우기',p:()=>[S.note.length===0?1:0,1]},
+ {id:'chain10',t:'끝말잇기 10연승',d:'경쟁전 끝말잇기 10연승',locked:1}
+];
+
+/* ============ 상태 ============ */
+const KEY='thinky-demo-v2';
+const QXP={feat:20,quick:15,word:10};
+function freshQ(){return{d:gday(),feat:0,quick:0,word:0,claimed:0}}
+function seed(){return{v:2,name:'체험생',xp:340,streak:4,last:gday(Date.now()-864e5),
+ troSet:{'case-crime':8,'case-chat':4,'read-r1':10,'read-r3':8,'pz-gram':5,'pz-blank':4,'test-word':12,'test-gram':9,quick:9,word:3},
+ ab:{lit:{c:8,t:11},voc:{c:10,t:13},inf:{c:5,t:9},cri:{c:2,t:6}},spd:{best:9,games:1},quickAt:0,
+ wrong:{g2:2,b1:1},note:['g2','b1'],solved:{},q:freshQ(),wordDone:'',ach:{},title:'문장 탐험가',frame:'ink',interest:{},
+ st:{reads:0,caseOk:0,questDays:0,wordPerfect:false},introHidden:false,votes:{},best:{},rank:null,
+ m:{chSent:0,chRecv:0,chWin:0,chLose:0,chDraw:0,wait:0,premView:0},priceArm:Math.random()<.5?'A':'B',prem:null}}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+if(!S||S.v!==2)S=seed();
+if(!S.m)S.m={chSent:0,chRecv:0,chWin:0,chLose:0,chDraw:0,wait:0,premView:0};if(!S.priceArm)S.priceArm=Math.random()<.5?'A':'B';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function ensureDay(){let ch=false;if(S.q.d!==gday()){S.q=freshQ();ch=true}const y=gday(Date.now()-864e5);if(S.last!==gday()&&S.last!==y&&S.streak>0){S.streak=0;ch=true}if(ch)save();return ch}
+ensureDay();
+
+const FEAT_POOL=['case-crime','case-chat','read-r2','pz-order','case-exam','case-persuade','pz-blank','read-r1'];
+const feat=()=>FEAT_POOL[gidx()%FEAT_POOL.length];
+
+/* ============ 공통 동작 ============ */
+let toastQ=[],toastOn=false;
+function toast(t){toastQ.push(t);if(!toastOn)nextToast()}
+function nextToast(){const t=toastQ.shift();if(!t){toastOn=false;return}toastOn=true;const el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>{el.classList.remove('show');setTimeout(nextToast,220)},2000)}
+function touch(){ensureDay();if(S.last!==gday()){const y=gday(Date.now()-864e5);S.streak=(S.last===y?S.streak:0)+1;S.last=gday();toast(`연속 학습 ${S.streak}일째!`)}}
+function addXP(n){const b=lvOf(S.xp);S.xp+=n;const a=lvOf(S.xp);if(a>b){const rw=LV_REW.filter(r=>r.lv>b&&r.lv<=a).map(r=>r.l||('칭호 ‘'+r.v+'’'));toast(`레벨 업! Lv.${a}`+(rw.length?' · '+rw.join(', ')+' 획득':''))}}
+function addTro(key,n){S.troSet[key]=(S.troSet[key]||0)+n}
+function troField(f){return Object.entries(S.troSet).filter(([k])=>fieldOf(k)===f).reduce((a,[,v])=>a+v,0)}
+function troTotal(){return Object.values(S.troSet).reduce((a,b)=>a+b,0)}
+function completeQuest(k,label){ensureDay();if(!S.q[k]){S.q[k]=1;addXP(QXP[k]);toast(`퀘스트 완료: ${label} +${QXP[k]} XP`)}}
+function checkAch(){ACH.forEach(a=>{if(a.locked||S.ach[a.id])return;const[c,t]=a.p();if(c>=t){S.ach[a.id]=gday();toast('업적 달성: '+a.t)}})}
+const questDone=()=>S.q.feat&&S.q.quick&&S.q.word;
+function pct(k){if(k==='spd')return S.spd.games?Math.min(100,Math.round(S.spd.best/20*100)):null;const a=S.ab[k];return a&&a.t?Math.round(a.c/a.t*100):null}
+function weakest(){let w=null,v=999;Object.keys(AB).forEach(k=>{const p=pct(k);if(p!==null&&p<v){v=p;w=k}});return w}
+const REC={lit:'set:read-r2',voc:'study:word',inf:'set:case-crime',cri:'set:case-exam',spd:'quick'};
+const recTitle=k=>{const r=REC[k];if(r==='quick')return'1분 퀴즈';if(r.startsWith('study:'))return STUDY[r.slice(6)].title+' → 시험';return SETS[r.slice(4)].title};
+function titles(){const lv=lvOf(S.xp);return LV_REW.filter(r=>r.k==='title'&&r.lv<=lv).map(r=>r.v).concat(ACH.filter(a=>a.title&&S.ach[a.id]).map(a=>a.title))}
+function frames(){const lv=lvOf(S.xp);return[{v:'basic',l:'기본'}].concat(LV_REW.filter(r=>r.k==='frame'&&r.lv<=lv).map(r=>({v:r.v,l:r.l})))}
+const quickLeft=()=>Math.max(0,S.quickAt+36e5-Date.now());
+const wordDoneToday=()=>S.wordDone===gday();
+
+/* ============ 플레이 카테고리 ============ */
+const CATS=[
+ {k:'case',t:'사건 파일',d:'범인 찾기 · 대화 판정 · 설득 작전 · 오답 탐정',modes:['case-crime','case-chat','case-persuade','case-exam']},
+ {k:'read',t:'흥미로운 글',d:'글을 읽고 4문제, 그중 2문제는 보너스',modes:['read-r1','read-r2','read-r3']},
+ {k:'puzzle',t:'퍼즐',d:'문장 · 단어 · 문법 · 빈칸 추론, 문제마다 시간 제한',modes:['pz-order','pz-word','pz-gram','pz-blank']},
+ {k:'study',t:'공부하고 시험 보기',d:'단어 · 속담 · 문법을 익히고 바로 시험',modes:['study:word','study:prov','study:gram']},
+ {k:'quick',t:'빠른 퀴즈',d:'1분 퀴즈(1시간에 1번) · 오늘의 단어(하루 1번)',modes:['quick','word']},
+ {k:'comp',t:'경쟁전',locked:1,d:'랭크 · 끝말잇기 · 앞말잇기 · 초성 퀴즈 · 비동기 · 스피드런 · 친선전',modes:['ranked','chain','rchain','chosung-duel','async','speedrun','friendly']},
+ {k:'coop',t:'협동 플레이',locked:1,d:'초성퀴즈 · 문장 이어가기 · n행시 · 협동 퍼즐 · 협동 퀴즈',modes:['co-chosung','co-story','co-nhaengsi','co-puzzle','co-quiz']}
+];
+function modeTro(m){if(m.startsWith('study:'))return S.troSet['test-'+m.slice(6)]||0;return S.troSet[m]||0}
+const catTro=c=>c.modes.reduce((a,m)=>a+modeTro(m),0);
+
+/* ============ 탭 ============ */
+let TAB='home',PLAYSUB=null,trophyField='all',COMM='cho';
+const TABDEF=[['home','홈'],['play','플레이'],['league','리그'],['community','커뮤니티'],['friends','친구'],['me','나']];
+function render(){
+  ensureDay();
+  const lv=lvOf(S.xp);
+  $('#chips').innerHTML=`<span class="chip" title="연속 학습">${IC.flame}${S.streak}</span><span class="chip" title="레벨">Lv.${lv}</span><span class="chip" title="트로피 합계">${IC.trophy}${troTotal()}</span><button class="chip tierchip" data-act="tab" data-arg="league" title="현재 티어: 언랭" aria-label="현재 티어: 언랭(배치 전)">${IC.unrank}</button>`;
+  $('#tabs').innerHTML=TABDEF.map(([k,l])=>`<button data-act="tab" data-arg="${k}" ${TAB===k?'aria-current="page"':''}>${IC[k]}<span>${l}</span></button>`).join('');
+  $('#main').innerHTML=VIEWS[TAB]();
+}
+const lockTag='<span class="tag lk">잠김 · 데모</span>';
+function lockCard(key,sub){const L=LOCKED[key];return`<button class="tap locked" data-act="lock" data-arg="${key}"><div class="t-title">${IC.lock}${L.t}</div><div class="t-sub">${sub||L.d}</div><div class="t-meta">${lockTag}<span>${L.tag}</span></div></button>`}
+function modeCard(m){
+  if(LOCKED[m])return lockCard(m);
+  if(m==='quick'){const left=quickLeft();return`<button class="tap ${left?'off':''}" data-act="go" data-arg="quick"><div class="t-head"><div class="t-title">1분 퀴즈</div>${troHTML(modeTro('quick'))}</div><div class="t-sub">60초 동안 최대한 많이 · 최고 기록 ${S.spd.best}개</div><div class="t-meta"><span class="tag tm">1시간에 1번</span><span data-cd="quick">${left?'다음 도전까지 '+fmtLeft(left):'지금 도전 가능'}</span></div></button>`}
+  if(m==='word'){const d=wordDoneToday();return`<button class="tap ${d?'off':''}" data-act="go" data-arg="word"><div class="t-head"><div class="t-title">오늘의 단어</div>${troHTML(modeTro('word'))}</div><div class="t-sub">하루 10개, 카드로 외우기</div><div class="t-meta"><span class="tag tm">하루 1번 · 아침 6시 리셋</span><span data-cd="word">${d?'새 단어까지 '+fmtLeft(nextReset()-Date.now()):'오늘 단어 준비됨'}</span></div></button>`}
+  if(m.startsWith('study:')){const k=m.slice(6),s=STUDY[k];return`<button class="tap" data-act="study" data-arg="${k}"><div class="t-head"><div class="t-title">${s.title}</div>${troHTML(modeTro(m))}</div><div class="t-sub">${s.sub}</div><div class="t-meta"><span>카드 ${s.cards.length}장 → 시험</span><span class="tag tm">시험 문제당 ${TEST_LIMIT[k]}초</span></div></button>`}
+  const s=SETS[m];const done=s.ids.filter(id=>S.solved[id]).length;
+  return`<button class="tap" data-act="set" data-arg="${m}"><div class="t-head"><div class="t-title">${s.title}${m===feat()?' <span class="tag hl">오늘의 콘텐츠</span>':''}</div>${troHTML(modeTro(m))}</div><div class="t-sub">${s.sub}</div><div class="t-meta"><span class="num">${done}/${s.ids.length} 해결</span>${s.limit?`<span class="tag tm">문제당 ${s.limit}초</span>`:'<span>시간 제한 없음</span>'}</div></button>`;
+}
+
+const VIEWS={
+home(){
+  const lv=lvOf(S.xp),cur=S.xp-T(lv),need=T(lv+1)-T(lv);
+  const nextRw=LV_REW.find(r=>r.lv>lv);
+  const fid=feat(),fs=SETS[fid];
+  const quests=[['feat',`오늘의 콘텐츠: ${fs.title}`,`set:${fid}`],['quick','1분 퀴즈 1판','quick'],['word','오늘의 단어 10개 외우기','word']];
+  const wk=weakest();const ws=dailyWords();const ql=quickLeft();
+  return `
+  ${S.introHidden?'':`<div class="notice" style="margin-bottom:14px"><b>THINKY(가칭) 한국어 데모</b> · Thinking &amp; Intelligence Gaming Platform<br>혼자 하는 기능은 모두 플레이할 수 있어요. 경쟁전·협동·친구·길드처럼 여러 명이 필요한 기능은 화면과 규칙만 볼 수 있게 잠가 두었어요. 기록은 이 기기에만 저장돼요.<div class="row" style="margin-top:8px"><button class="btn sm ghost" data-act="hideIntro">확인했어요</button></div></div>`}
+  <h1 class="h1">${esc(S.name)}님, <span class="mark">생각 근육</span><br>오늘도 한 세트 해요</h1>
+  <div class="card" style="margin-top:16px">
+    <div class="streak">
+      <div class="flame">${IC.flame}<b class="num">${S.streak}일</b></div>
+      <div>
+        <div class="row"><b>Lv.${lv}</b><span class="tiny muted">${esc(S.title)}</span><span class="spacer"></span><span class="tiny num">${cur} / ${need} XP</span></div>
+        <div class="bar hlb" style="margin:6px 0"><i style="width:${Math.min(100,cur/need*100)}%"></i></div>
+        <div class="tiny muted">${S.last===gday()?`오늘 학습 완료 · 연속 ${S.streak}일`:`오늘 한 문제만 풀면 ${S.streak+1}일 연속!`}${nextRw?` · Lv.${nextRw.lv} 보상: ${nextRw.l||'칭호 ‘'+nextRw.v+'’'}`:''}</div>
+      </div>
+    </div>
+  </div>
+  <div class="sec">일일 퀘스트 <small>아침 6시 리셋 · 모두 끝내면 +30 XP</small></div>
+  <div class="card">
+    ${quests.map(([k,t,go])=>`<div class="quest"><span class="ck ${S.q[k]?'on':''}">${S.q[k]?IC.check:''}</span><span>${t}<br><span class="tiny muted">+${QXP[k]} XP</span></span>${S.q[k]?'<span class="tiny muted">완료</span>':`<button class="btn sm ghost" data-act="go" data-arg="${go}">하기</button>`}</div>`).join('')}
+    <div class="quest"><span class="ck lk"></span><span class="muted">경쟁전 1판<br><span class="tiny">데모에서는 잠긴 퀘스트</span></span><button class="btn sm ghost" data-act="lock" data-arg="ranked" aria-label="잠긴 퀘스트 보기">${IC.lock}</button></div>
+    <button class="btn full ${questDone()&&!S.q.claimed?'hl':''}" style="margin-top:10px" data-act="claim" ${questDone()&&!S.q.claimed?'':'disabled'}>${S.q.claimed?'오늘 보상 받음':questDone()?'보상 받기 +30 XP':`퀘스트 ${[S.q.feat,S.q.quick,S.q.word].filter(Boolean).length}/3 진행 중`}</button>
+  </div>
+  <div class="grid2" style="margin-top:12px">
+    <button class="tap ${wordDoneToday()?'off':''}" data-act="go" data-arg="word"><div class="tiny muted">오늘의 단어 10개</div><div class="h1" style="font-size:22px;margin:4px 0">${esc(ws[0].w)} 외 9개</div><div class="t-sub" data-cd="word">${wordDoneToday()?'완료 · 새 단어까지 '+fmtLeft(nextReset()-Date.now()):'하루 1번 · 아침 6시 리셋'}</div></button>
+    <button class="tap feat" data-act="go" data-arg="quick"><div class="tiny" style="color:#d4d8f5">정보 처리 속도</div><div class="h1" style="font-size:22px;margin:4px 0">1분 퀴즈</div><div class="t-sub" data-cd="quick">${ql?'다음 도전까지 '+fmtLeft(ql):'지금 도전 가능 · 최고 '+S.spd.best+'개'}</div></button>
+  </div>
+  <div class="sec">오답 노트 <small>${S.note.length}문제</small></div>
+  <div class="card">${S.note.length?S.note.filter(id=>IT[id]).slice(0,4).map(id=>`<div class="ach"><span class="medal">${IC.medal}</span><span class="tiny">${esc(plainQ(IT[id].title||IT[id].q))}<br><span class="muted">${IT[id].kind} · ${(S.wrong[id]||1)}번 틀림</span></span><span></span></div>`).join('')+(S.note.length>4?`<div class="tiny muted" style="margin-top:6px">외 ${S.note.length-4}문제</div>`:'')+`<button class="btn full" style="margin-top:10px" data-act="note">오답 다시 풀기 (${S.note.length})</button>`:'<div class="tiny muted">오답 노트가 비어 있어요. 틀린 문제는 자동으로 여기 저장돼요.</div>'}</div>
+  <div class="cta-row"><button class="tap" data-act="wait"><div class="t-title">정식 출시 알림</div><div class="t-sub">대기자 등록하기</div></button><button class="tap" data-act="prem"><div class="t-title">프리미엄</div><div class="t-sub">준비 중 · 미리 보기</div></button></div>
+  ${wk?`<div class="sec">맞춤 추천 <small>능력 대시보드 기준</small></div>
+  <button class="tap" data-act="go" data-arg="${REC[wk]}"><div class="t-title">${recTitle(wk)}</div><div class="t-sub">요즘 <b>${AB[wk]}</b>이 가장 낮아요 (${pct(wk)}점). 이 콘텐츠가 ${AB[wk]}을 집중적으로 키워요.</div></button>`:''}
+  <div class="sec">친구 깨우기 <small>예시 친구</small></div>
+  <button class="tap locked" data-act="wake" data-arg="1"><div class="t-title">${IC.lock}지훈이 3일째 안 들어왔어요</div><div class="t-sub">연속 깨우기로 다시 불러올 수 있어요 (하루 1번)</div><div class="t-meta">${lockTag}<span>친구 기능</span></div></button>`;
+},
+play(){
+  if(PLAYSUB){
+    const c=CATS.find(x=>x.k===PLAYSUB);
+    return `<button class="back" data-act="sub" data-arg="">‹ 플레이</button>
+    <div class="t-head" style="margin-top:14px;align-items:center"><h1 class="h1"><span class="mark">${c.t}</span></h1>${c.locked?lockTag:`<span class="tro" style="font-size:16px">${IC.trophy}${catTro(c)}</span>`}</div>
+    <p class="muted" style="margin:6px 0 16px">${c.locked?'여러 명이 함께하는 모드라 데모에서는 규칙만 볼 수 있어요.':c.d}</p>
+    <div class="list">${c.modes.map(modeCard).join('')}</div>`;
+  }
+  const fc=CATS.find(c=>c.modes.includes(feat()));
+  return `
+  <h1 class="h1"><span class="mark">플레이</span></h1>
+  <p class="muted" style="margin:6px 0 16px">모드를 누르면 세부 모드가 나와요. 오른쪽 숫자는 그 모드에서 모은 트로피예요.</p>
+  <div class="list">${CATS.map((c,i)=>`<button class="tap cat ${c.locked?'locked':''} ${i===0?'feat':''}" data-act="sub" data-arg="${c.k}"><div class="t-head"><div class="t-title">${c.locked?IC.lock:''}${c.t}${c===fc?' <span class="tag hl">오늘의 콘텐츠</span>':''}</div>${c.locked?lockTag:troHTML(catTro(c))}</div><div class="t-sub">${c.d}</div><div class="t-meta"><span>세부 모드 ${c.modes.length}개</span><span>›</span></div></button>`).join('')}</div>`;
+},
+league(){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth(),sn=Math.floor(m/2)+1;
+  const st=new Date(y,(sn-1)*2,1),en=new Date(y,(sn-1)*2+2,0);
+  const dleft=Math.ceil((en-new Date(y,m,now.getDate()))/864e5);
+  const f=trophyField;
+  const score=o=>f==='all'?Object.values(o).reduce((a,b)=>a+b,0):o[f];
+  const mine=f==='all'?troTotal():troField(f);
+  const rows=PLAYERS.map(p=>({n:p.n,s:score(p.tro)})).concat([{n:S.name+' (나)',s:mine,me:1}]).sort((a,b)=>b.s-a.s);
+  const tc=TIERS[Math.floor(SIM.i/3)][1];
+  return `
+  <h1 class="h1"><span class="mark">리그</span></h1>
+  <div class="card" style="margin-top:14px">
+    <div class="row"><b>시즌 ${sn}</b><span class="tiny muted num">${dkey(st).replace(/-/g,'.')} ~ ${dkey(en).replace(/-/g,'.')}</span><span class="spacer"></span><span class="tag hl num">D-${dleft}</span></div>
+    <div class="tiny muted" style="margin-top:4px">시즌은 2개월 단위, 1년에 6번 열려요.</div>
+    <div class="row" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
+      <div style="width:48px;height:48px;flex:none">${IC.unrank}</div>
+      <div><b>내 티어: 언랭 (배치 전)</b><div class="tiny muted">경쟁전이 데모에서 잠겨 있어 랭크가 생기지 않아요. 랭크가 없으면 물음표로 표시돼요.</div></div>
+    </div>
+    <button class="btn full ghost" style="margin-top:10px" data-act="lock" data-arg="ranked">랭크 경쟁전 규칙 보기</button>
+  </div>
+
+  <div class="sec">티어 구조 <small>큰 랭크 7개 × 작은 랭크 3개</small></div>
+  <div class="card">${TIERS.slice().reverse().map(([n,c])=>`<div class="tier"><span class="dot" style="background:${c}"></span><b>${n}</b><span class="divs">${DIV.map(d=>`<span>${d}</span>`).join('')}</span></div>`).join('')}
+  <div class="tiny muted" style="margin-top:6px">가장 낮은 티어는 <b>브론즈 I</b>. 브론즈 I → II → III → 실버 I 순서로 올라가요. 100점을 채우면 승급.</div></div>
+
+  <div class="sec">강등·보호막 시뮬레이터 <small>혼자 눌러 보는 규칙 체험</small></div>
+  <div class="card">
+    <div class="row"><span class="dot" style="background:${tc}"></span><b>${tierName(SIM.i)}</b><span class="spacer"></span><span class="num"><b>${SIM.p}</b> / 100점</span></div>
+    <div class="bar" style="margin:8px 0"><i style="width:${SIM.p}%;background:${tc}"></i></div>
+    <div class="row"><span class="tiny muted">보호막</span><span class="shields">${IC.shield(SIM.sh>=1)}${IC.shield(SIM.sh>=2)}</span><span class="spacer"></span><span class="tiny muted">승리 최대 +45 · 패배 최대 −30</span></div><div class="tiny muted" style="margin-top:4px">실제 점수는 경기 성과에 따라 최대값 안에서 달라져요. 성과 기준이 정해지기 전이라 지금은 무작위예요.</div>
+    <div class="log">${SIM.log.slice(-3).map(l=>`<div>${l}</div>`).join('')||'<div>골드 I로 막 승급해 보호막 2개를 받은 상태예요. 승리·패배를 눌러 보세요.</div>'}</div>
+    <div class="row" style="margin-top:10px"><button class="btn" style="flex:1;background:var(--good);border-color:var(--good)" data-act="sim" data-arg="w">승리</button><button class="btn" style="flex:1;background:var(--bad);border-color:var(--bad)" data-act="sim" data-arg="l">패배</button><button class="btn ghost" data-act="sim" data-arg="r">처음부터</button></div>
+    <ul class="tiny muted" style="margin:10px 0 0;padding-left:18px">
+      <li>티어가 바뀔 때마다 보호막 2개가 새로 생겨요. 올라갈 때(실버 III → 골드 I)도, 떨어질 때(골드 I → 실버 III)도 마찬가지예요.</li>
+      <li>같은 티어 안의 강등(골드 II → 골드 I)에는 보호막을 쓰지 않아요. 0점에서 지면 바로 강등.</li>
+      <li>티어가 바뀌는 강등전(골드 I → 실버 III)에서만 보호막이 대신 깨져요.</li>
+    </ul>
+  </div>
+
+  <div class="sec">트로피 랭킹 <small>플레이 모드별로 쌓여요</small></div>
+  <div class="seg" role="group" aria-label="분야">${[['all','전체 합산'],...Object.entries(FIELD)].map(([k,l])=>`<button data-act="tf" data-arg="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+  <div class="card">${rows.map((r,i)=>`<div class="rk ${r.me?'me':''}"><span class="pos">${i+1}</span><span>${esc(r.n)}</span>${troHTML(r.s)}</div>`).join('')}
+  <div class="tiny muted" style="margin-top:6px">다른 플레이어는 예시 데이터예요. 내 트로피는 실제로 푼 만큼 올라가요.</div></div>
+
+  <div class="sec">시즌 랭킹 TOP 5 <small>예시 데이터</small></div>
+  <div class="card">${SEASON_TOP.map((p,i)=>`<div class="rk"><span class="pos">${i+1}</span><span>${p.n}<br><span class="tiny muted">${p.t}</span></span><span class="num">${p.p}점</span></div>`).join('')}</div>
+  <div class="sec">칭호</div>
+  <div class="card tiny">시즌이 끝나면 최종 티어에 맞는 칭호와 프로필 테두리를 받아요. 예) 시즌 ${sn} 골드, 시즌 ${sn} 그랜드마스터. 지금 가진 칭호는 <b>나</b> 탭에서 바꿀 수 있어요.</div>`;
+},
+community(){
+  const voteBlock=(p,labels)=>{
+    const my=S.votes[p.id];
+    if(!my)return`<div class="vote"><button class="btn ghost" data-act="vote" data-arg="${p.id}:0">${labels[0]}</button><button class="btn ghost" data-act="vote" data-arg="${p.id}:1">${labels[1]}</button></div>`;
+    const v=p.v.map((n,i)=>n+(my===String(i)?1:0)),tot=v[0]+v[1];
+    const p0=Math.round(v[0]/tot*100);return`<div class="vres">${labels.map((l,i)=>{const pc=i?100-p0:p0;return`<div class="vrow ${my===String(i)?'mine':''}"><b>${l}${my===String(i)?' ✓':''}</b><div class="bar"><i style="width:${pc}%"></i></div><span>${pc}%</span></div>`}).join('')}<div class="tiny muted">${tot.toLocaleString()}명 참여 · <button class="tiny" style="border:0;background:none;color:var(--blue);padding:0;font-weight:700" data-act="unvote" data-arg="${p.id}">투표 바꾸기</button></div></div>`;
+  };
+  const head=p=>`<div class="post-h"><span class="ava">${p.team[0]}</span><b style="color:var(--ink)">${p.team}</b><span>· ${p.ago}</span><span class="spacer"></span><span class="tag">예시</span></div>`;
+  const cho=CHO_POSTS.map(p=>`<div class="post">${head(p)}<div class="row" style="align-items:flex-end;gap:14px"><div><div class="tiny muted">주제: ${p.topic}</div><div class="cho">${p.cho}</div></div><div><div class="tiny muted">팀이 낸 답</div><span class="ans">${p.ans}</span></div></div><div style="margin-top:10px;font-weight:600">${p.q}</div>${voteBlock(p,['인정','불인정'])}</div>`).join('');
+  const story=STORY_POSTS.map(p=>`<div class="post">${head(p)}<div class="tiny muted" style="margin-bottom:8px">${p.n}명이 문장 성분을 하나씩 이어 만든 문장</div><p class="result-text">${p.text}</p><div style="margin-top:12px;font-weight:600">문장이 자연스럽게 이어졌나요?</div>${voteBlock(p,['잘 이어졌어요','흐름이 끊겼어요'])}</div>`).join('');
+  const poem=POEM_POSTS.map(p=>`<div class="post">${head(p)}<div class="tiny muted" style="margin-bottom:8px">${p.word.length}행시 · 제시어 <b style="color:var(--ink)">${p.word}</b> · 한 사람이 한 줄씩</div><div class="poem">${p.lines.map(l=>`<div><b>${l[0]}</b><span>${l[1]}</span></div>`).join('')}</div><div style="margin-top:12px;font-weight:600">이 n행시, 어땠나요?</div>${voteBlock(p,['잘 지었어요','아쉬워요'])}</div>`).join('');
+  return `
+  <h1 class="h1"><span class="mark">커뮤니티</span></h1>
+  <p class="muted" style="margin:6px 0 12px">다른 팀이 플레이한 협동 결과를 판정해요. 지금은 예시 게시물이고, 투표는 이 기기에만 반영돼요.</p>
+  <div class="seg" role="group" aria-label="게시판"><button data-act="comm" data-arg="cho" aria-pressed="${COMM==='cho'}">초성퀴즈 판정</button><button data-act="comm" data-arg="story" aria-pressed="${COMM==='story'}">문장 이어가기</button><button data-act="comm" data-arg="poem" aria-pressed="${COMM==='poem'}">n행시</button></div>
+  ${COMM==='cho'?cho:COMM==='story'?story:poem}
+  <div style="margin-top:14px">${lockCard('post')}</div>`;
+},
+friends(){
+  return `
+  <h1 class="h1"><span class="mark">친구</span></h1>
+  <p class="muted" style="margin:6px 0 0">친구·길드 기능은 다른 사용자가 있어야 해서 데모에서는 잠겨 있어요. 아래 친구는 예시예요.</p>
+  <div class="sec">친구 목록 <small>예시</small></div>
+  <div class="card">${FRIENDS.map((f,i)=>`<div class="fr"><span class="ava ${f.on?'on':''}">${f.n[0]}</span><span><b>${f.n}</b> <span class="tiny muted">${f.t}</span><br><span class="tiny ${f.away?'':'muted'}" style="${f.away?'color:var(--bad)':''}">${f.last}</span></span><button class="btn sm ${f.away?'hl':'ghost'}" data-act="wake" data-arg="${i}">깨우기</button></div>`).join('')}</div>
+  <div class="sec">도전장 <small>앱이 없는 친구에게도</small></div>
+  <button class="tap feat" data-act="chPick"><div class="t-title">도전장 보내기</div><div class="t-sub">문제를 풀고 내 기록을 링크로 보내면, 친구가 같은 문제로 내 기록에 도전해요</div><div class="t-meta"><span>보낸 도전장 ${S.m.chSent} · 받은 도전장 ${S.m.chRecv}</span><span>›</span></div></button>
+  <div class="card" style="margin-top:10px"><label class="tiny muted" for="chIn">받은 도전장 링크나 코드 붙여 넣기</label><div class="row" style="margin-top:2px"><input class="inp" id="chIn" placeholder="d-cc-2-2-41-…" autocomplete="off"><button class="btn sm" style="margin-top:4px" data-act="chEnter">열기</button></div></div>
+  <div class="sec">깨우기 종류</div>
+  <div class="list"><div class="grid2">${lockCard('wake-normal','간단한 알림 · 하루 1번')}${lockCard('wake-streak','3일+ 미접속 친구 · 하루 1번')}</div>${lockCard('wake-together','1:1 경쟁 또는 협동 중에서 골라 같이 하자고 신청')}</div>
+  <div class="sec">길드</div>
+  ${lockCard('guild','같은 학교·관심사 친구들과 주간 퀘스트, 길드 랭킹')}`;
+},
+me(){
+  const lv=lvOf(S.xp);const wk=weakest();
+  const rep=Object.entries(S.wrong).filter(([id,c])=>c>=2&&IT[id]);
+  const label=it=>esc(plainQ(it.title||it.q));
+  return `
+  <div class="card prof">
+    <div class="pava fr-${S.frame}">${esc(S.name[0])}</div>
+    <div><div class="h1" style="font-size:23px">${esc(S.name)}</div><div class="row wrap" style="margin-top:4px"><span class="tag hl">${esc(S.title)}</span><span class="tag">Lv.${lv}</span><span class="tag">언랭</span>${troHTML(troTotal())}</div></div>
+  </div>
+  <div class="sec">칭호 · 테두리</div>
+  <div class="card">
+    <div class="tiny muted">칭호</div>
+    <div class="seg" style="margin-top:4px">${titles().map(t=>`<button data-act="setTitle" data-arg="${esc(t)}" aria-pressed="${S.title===t}">${esc(t)}</button>`).join('')}</div>
+    <div class="tiny muted">프로필 테두리</div>
+    <div class="seg" style="margin-top:4px">${frames().map(f=>`<button data-act="setFrame" data-arg="${f.v}" aria-pressed="${S.frame===f.v}">${f.l}</button>`).join('')}</div>
+  </div>
+  <div class="sec">레벨 보상 <small>승패 상관없이 플레이하면 XP</small></div>
+  <div class="rew-road">${LV_REW.map(r=>`<div class="${r.lv<=lv?'':'off'}"><b>Lv.${r.lv}</b>${r.k==='title'?'칭호':'테두리'}<br>${r.l||r.v}</div>`).join('')}</div>
+
+  <div class="sec">능력 대시보드</div>
+  <div class="card">
+    ${Object.keys(AB).map(k=>{const p=pct(k);return`<div class="abil ${k===wk?'weak':''}"><span>${AB[k]}${k===wk?' <span class="tag" style="color:var(--bad)">취약</span>':''}</span><div class="bar"><i style="width:${p||0}%"></i></div><span class="v">${p===null?'–':p}</span></div>`}).join('')}
+    <div class="tiny muted" style="margin-top:6px">정답률로 계산해요. 정보 처리 속도는 1분 퀴즈 최고 기록(20개 = 100점) 기준.</div>
+    ${wk?`<button class="btn full hl" style="margin-top:10px" data-act="go" data-arg="${REC[wk]}">맞춤 추천: ${recTitle(wk)}</button>`:''}
+  </div>
+
+  <div class="sec">반복 오답 추적 <small>2번 이상 틀린 문제</small></div>
+  <div class="card">${rep.length?rep.map(([id,c])=>`<div class="ach"><span class="medal" style="background:#fdeceb">${c}</span><span class="tiny">${label(IT[id])}<br><span class="muted">${IT[id].kind} · ${AB[IT[id].ab]}</span></span><span class="tiny" style="color:var(--bad)">${c}번 틀림</span></div>`).join(''):'<div class="tiny muted">아직 반복해서 틀린 문제가 없어요.</div>'}</div>
+
+  <div class="sec">업적</div>
+  <div class="card">${ACH.map(a=>{if(a.locked)return`<div class="ach"><span class="medal" style="border-style:dashed;color:var(--lock)">${IC.lock}</span><span class="tiny"><b>${a.t}</b><br><span class="muted">${a.d}</span></span>${lockTag}</div>`;const[c,t]=a.p();const on=!!S.ach[a.id];return`<div class="ach"><span class="medal ${on?'on':''}">${IC.medal}</span><span class="tiny"><b>${a.t}</b>${a.title?` <span class="muted">· 칭호 보상</span>`:''}<br><span class="muted">${a.d}</span></span><span class="tiny num">${on?'달성':Math.min(c,t)+'/'+t}</span></div>`}).join('')}</div>
+
+  <div class="sec">프리미엄 · 출시 알림</div>
+  <div class="cta-row" style="margin-top:0"><button class="tap" data-act="prem"><div class="t-title">프리미엄</div><div class="t-sub">준비 중 · 미리 보기</div></button><button class="tap" data-act="wait"><div class="t-title">출시 알림</div><div class="t-sub">대기자 등록</div></button></div>
+  <div class="sec">테스트 메모 <small>이 기기 기록 · 친구 테스트 확인용</small></div>
+  <div class="card tiny" style="margin-bottom:8px">도전장 보냄 ${S.m.chSent} · 받음 ${S.m.chRecv} (승 ${S.m.chWin} / 패 ${S.m.chLose} / 무 ${S.m.chDraw})<br>대기자 버튼 ${S.m.wait}번 · 프리미엄 화면 ${S.m.premView}번${S.prem?` · 가격 ${S.prem.price}원에 ‘${S.prem.ans==='yes'?'결제할래요':'안 할래요'}’`:''}</div>
+  <div class="card tiny">${Object.keys(S.interest).filter(k=>S.interest[k]&&LOCKED[k]).map(k=>`<span class="tag" style="margin:2px">${LOCKED[k].t}</span>`).join('')||'<span class="muted">잠긴 기능을 열어 ‘이 기능 기대돼요’를 누르면 여기 모여요. 친구 테스트 때 어떤 기능이 궁금했는지 확인하는 용도예요.</span>'}</div>
+  <button class="btn full ghost" style="margin-top:22px" data-act="resetAsk">데모 기록 처음으로 되돌리기</button>`;
+}};
+
+/* ============ 리그 시뮬레이터 ============ */
+/* 골드 I(인덱스 6)로 막 승급한 상태에서 시작. 점수 변동은 성과 기준이 정해지기 전까지 최대값 안에서 임시로 무작위 */
+const SIM={i:6,p:20,sh:2,log:[]};
+function sim(a){
+  if(a==='r'){Object.assign(SIM,{i:6,p:20,sh:2,log:[]});return}
+  if(a==='w'){
+    const g=rand(15,45);SIM.p+=g;let msg=`승리 +${g}점`;
+    if(SIM.p>=100){
+      if(SIM.i<20){SIM.i++;SIM.p-=100;
+        if(SIM.i%3===0){SIM.sh=2;msg+=` → ${tierName(SIM.i)} 승급! 보호막 2개 지급`}
+        else msg+=` → ${tierName(SIM.i)} 승급`}
+      else SIM.p=100}
+    SIM.log.push(msg);return}
+  const l=rand(10,30);
+  if(SIM.p>0){const was=SIM.p;SIM.p=Math.max(0,SIM.p-l);SIM.log.push(`패배 −${Math.min(l,was)}점${SIM.p===0?' · 0점 도달':''}`);return}
+  if(SIM.i===0){SIM.log.push('브론즈 I은 가장 낮은 티어라 더 내려가지 않아요');return}
+  if(SIM.i%3!==0){SIM.i--;SIM.p=70;SIM.log.push(`0점에서 패배 → ${tierName(SIM.i)} 강등 (같은 티어 안이라 보호막은 쓰지 않아요)`);return}
+  if(SIM.sh>0){SIM.sh--;SIM.log.push(`티어가 바뀌는 강등전 · 보호막이 대신 깨졌어요 (남은 보호막 ${SIM.sh}개)`);return}
+  SIM.i--;SIM.p=70;SIM.sh=2;SIM.log.push(`보호막 없이 패배 → ${tierName(SIM.i)} 강등 · 새 티어라 보호막 2개 지급`);
+}
+
+/* ============ 시트(게임 화면) ============ */
+let G=null;
+const sheet=$('#sheet');
+function openSheet(title){$('#shTitle').textContent=title;sheet.classList.add('open');$('#shBody').scrollTop=0}
+function stopTimers(){if(G){if(G.timer){clearInterval(G.timer);G.timer=null}if(G.qt){clearInterval(G.qt);G.qt=null}}}
+function closeSheet(){stopTimers();G=null;sheet.classList.remove('open');save();render()}
+function prog(i,n){$('#shProg').innerHTML=`<div class="bar hlb"><i style="width:${n?i/n*100:0}%"></i></div>`}
+
+function startSet(id,ids){
+  stopTimers();
+  let set;
+  if(id==='note'){set={id:'note',title:'오답 다시 풀기',ids:ids}}
+  else{set=SETS[id];if(set.gen){const items=GEN[set.gen]();reg(items,id);set.ids=items.map(x=>x.id)}}
+  G={set,ids:set.ids.slice(),i:0,c:0,xp:0,tro:0,phase:set.intro?'intro':'q',fb:null,wrongN:0,timeouts:0};
+  openSheet(set.title);
+  if(G.phase==='q')goQ();else drawGame();
+}
+function goQ(){if(G.i===0&&!G.t0)G.t0=Date.now();prepItem();drawGame();startQTimer();$('#shBody').scrollTop=0}
+function prepItem(){
+  const it=IT[G.ids[G.i]];if(!it)return;
+  G.fb=null;G.timedOut=false;G.bad=null;
+  if(it.type==='mc'){if(it.shuf){const o=mcShuf(it.opts[it.ans],it.opts.filter((_,i)=>i!==it.ans));G.opts=o.opts;G.ans=o.ans}else{G.opts=it.opts;G.ans=it.ans}G.picked=null}
+  if(it.type==='order'){G.pool=shuffle(it.parts.map((_,i)=>i));G.sel=[]}
+  if(it.type==='match'){G.L=shuffle(it.pairs.map((_,i)=>i));G.R=shuffle(it.pairs.map((_,i)=>i));G.selL=null;G.done=[];G.miss=0}
+}
+/* 문제당 제한 시간: 오답 노트 다시 풀기에는 원래 모드의 제한 시간을 적용 */
+function limitOf(it){return G.set.limit||(G.set.id==='note'&&SETS[it.setId]?SETS[it.setId].limit:0)||0}
+function startQTimer(){
+  if(G.qt){clearInterval(G.qt);G.qt=null}
+  const it=IT[G.ids[G.i]];const lim=limitOf(it);
+  if(!lim){prog(G.i,G.ids.length);return}
+  G.tLim=lim;G.tEnd=Date.now()+lim*1000;G.qt=setInterval(qTick,100);qTick();
+}
+function qTick(){
+  if(!G||G.fb||!G.tEnd){if(G&&G.qt){clearInterval(G.qt);G.qt=null}return}
+  const left=Math.max(0,G.tEnd-Date.now());
+  $('#shProg').innerHTML=`<div class="timer"><div class="bar" style="flex:1"><i style="width:${left/(G.tLim*10)}%;background:${left<3000?'var(--bad)':'var(--blue)'}"></i></div><b style="color:${left<3000?'var(--bad)':'var(--ink)'}">${Math.ceil(left/1000)}초</b></div>`;
+  if(left<=0){clearInterval(G.qt);G.qt=null;onTimeout()}
+}
+function onTimeout(){
+  const it=IT[G.ids[G.i]];
+  G.timedOut=true;G.timeouts++;
+  if(it.type==='mc')G.picked=-1;
+  if(it.type==='match')G.selL=null;
+  grade(false);drawGame();
+}
+function drawGame(){
+  const body=$('#shBody'),foot=$('#shFoot');
+  if(G.phase==='intro'){const r=G.set.intro;prog(0,G.ids.length);
+    body.innerHTML=`<div class="kind"><span class="tag">${r.tag}</span><span class="tag">글 읽기</span></div><h2 class="h1" style="font-size:23px;margin-bottom:12px">${r.title}</h2><div class="passage">${r.body.map(p=>`<p>${p}</p>`).join('')}</div>`;
+    foot.innerHTML=`<button class="btn full hl" data-act="beginQ">다 읽었어요 · 문제 풀기</button>`;return}
+  if(G.phase==='done')return drawResult();
+  const it=IT[G.ids[G.i]];
+  if(G.fb||!limitOf(it))prog(G.i+(G.fb?1:0),G.ids.length);
+  const lim=limitOf(it);
+  let h=`<div class="kind"><span class="tag">${it.kind}</span><span class="tag">${AB[it.ab]}</span>${it.bonus?'<span class="tag hl">보너스 · 추가 점수</span>':''}${lim?`<span class="tag tm">${lim}초</span>`:''}<span class="spacer"></span><span class="tiny muted num">${G.i+1} / ${G.ids.length}</span></div>`;
+  if(G.set.intro)h+=`<details class="pv"><summary>지문 다시 보기</summary><div class="passage">${G.set.intro.body.map(p=>`<p>${p}</p>`).join('')}</div></details>`;
+  if(it.ctx)h+=it.ctx;
+  if(it.type==='mc'){
+    h+=`<div class="q">${fmtQ(it.q)}</div><div class="opts">`+G.opts.map((o,i)=>{let c='';if(G.picked!==null){if(i===G.ans)c='ok';else if(i===G.picked)c='no'}return`<button class="opt ${c}" data-act="pick" data-arg="${i}" ${G.picked!==null?'disabled':''}><span class="n">${i+1}</span><span>${o}</span></button>`}).join('')+'</div>';
+  }
+  if(it.type==='order'){
+    h+=`<div class="q">${it.title}<br><span class="tiny muted" style="font-weight:500">문장을 이야기 순서대로 눌러 쌓아 보세요. 쌓은 문장을 누르면 빠져요.</span></div>`;
+    h+=`<div class="slots">${G.sel.length?G.sel.map((pi,k)=>`<button class="piece" data-act="ordDel" data-arg="${k}" ${G.fb?'disabled':''}><b>${k+1}</b><span>${it.parts[pi]}</span></button>`).join(''):'<div class="empty">여기에 순서대로 쌓여요</div>'}</div>`;
+    h+=`<div class="list">${G.pool.map(pi=>{const used=G.sel.includes(pi);return`<button class="piece ${used?'used':''}" data-act="ordAdd" data-arg="${pi}" ${used||G.fb?'disabled':''}><b>·</b><span>${it.parts[pi]}</span></button>`}).join('')}</div>`;
+  }
+  if(it.type==='match'){
+    const off=!!G.fb;
+    h+=`<div class="q">${it.title}<br><span class="tiny muted" style="font-weight:500">왼쪽 단어를 먼저 누르고, 알맞은 뜻을 누르세요. 실수 없이 맞히면 정답!</span></div>`;
+    h+=`<div class="match"><div class="col">${G.L.map(i=>{const d=G.done.includes(i),bad=G.bad&&G.bad[0]===i;return`<button class="mbtn ${d?'done':''} ${G.selL===i?'sel':''} ${bad?'bad':''}" data-act="mL" data-arg="${i}" ${d||off?'disabled':''}>${it.pairs[i][0]}</button>`}).join('')}</div><div class="col">${G.R.map(i=>{const d=G.done.includes(i),bad=G.bad&&G.bad[1]===i;return`<button class="mbtn ${d?'done':''} ${bad?'bad':''}" data-act="mR" data-arg="${i}" ${d||off?'disabled':''}>${it.pairs[i][1]}</button>`}).join('')}</div></div>`;
+    h+=`<div class="miss ${G.miss?'on':''}">${G.bad?'✕ 틀렸어요! ':''}실수 ${G.miss}번</div>`;
+  }
+  body.innerHTML=h;
+  if(G.fb){
+    let extra='';
+    if(it.type==='order'&&!G.fb.ok)extra=`<p><b>정답 순서</b><br>${it.parts.map((p,i)=>`${i+1}. ${p}`).join('<br>')}</p>`;
+    if(it.type==='match'&&!G.fb.ok)extra=`<p><b>정답</b><br>${it.pairs.map(p=>`${p[0]} — ${p[1]}`).join('<br>')}</p>`;
+    const head=G.fb.ok?'정답!':G.timedOut?'시간 초과':(it.type==='match'?`실수 ${G.miss}번`:'아쉬워요');
+    foot.innerHTML=`<div class="fb ${G.fb.ok?'ok':'no'}"><h3>${head}</h3>${G.fb.ok?`<p class="tiny">+${G.fb.xp} XP · 트로피 +${G.fb.t}</p>`:'<p class="tiny">오답 노트에 저장했어요</p>'}${extra}<p>${it.exp}</p></div><button class="btn full ${G.fb.ok?'hl':''}" data-act="next">${G.i+1<G.ids.length?'다음 문제':'결과 보기'}</button>`;
+  }else if(it.type==='order'&&G.sel.length===it.parts.length){
+    foot.innerHTML=`<button class="btn full hl" data-act="ordCheck">이 순서로 확인</button>`;
+  }else foot.innerHTML='';
+}
+function grade(ok){
+  if(G.qt){clearInterval(G.qt);G.qt=null}
+  const it=IT[G.ids[G.i]];
+  touch();
+  if(!S.ab[it.ab])S.ab[it.ab]={c:0,t:0};
+  S.ab[it.ab].t++;
+  let xp=0,t=0;
+  if(ok){S.ab[it.ab].c++;G.c++;xp=it.bonus?15:(it.type==='mc'?10:12);t=it.bonus?4:2;S.solved[it.id]=1;
+    if(it.field==='case')S.st.caseOk++;
+    if(G.set.id==='note')S.note=S.note.filter(x=>x!==it.id);
+    addXP(xp);G.xp+=xp;addTro(it.setId,t);G.tro+=t;
+  }else{G.wrongN++;S.wrong[it.id]=(S.wrong[it.id]||0)+1;if(!S.note.includes(it.id))S.note.push(it.id)}
+  G.fb={ok,xp,t};
+  checkAch();save();
+}
+function finishSet(){
+  G.phase='done';stopTimers();
+  const sid=G.set.id;
+  if(sid.startsWith('read-'))S.st.reads++;
+  if(sid==='test-word'&&G.c===G.ids.length)S.st.wordPerfect=true;
+  if(sid===feat())completeQuest('feat','오늘의 콘텐츠');
+  G.secs=Math.max(1,Math.round((Date.now()-(G.t0||Date.now()))/1000));
+  if(G.duel&&G.duel.recv){const o=G.duel.recv;G.outcome=G.c>o.c||(G.c===o.c&&G.secs<o.secs)?'win':(G.c===o.c&&G.secs===o.secs?'draw':'lose');S.m['ch'+{win:'Win',lose:'Lose',draw:'Draw'}[G.outcome]]++}
+  checkAch();save();drawGame();
+}
+function drawResult(){
+  const n=G.ids.length;
+  prog(n,n);
+  const msg=G.c===n?'완벽해요!':G.c>=n/2?'좋아요, 거의 다 왔어요':'틀린 문제가 진짜 공부예요';
+  const o=G.duel&&G.duel.recv;
+  const duelHTML=o?`<div class="vsbox"><div><small>${esc(o.name)}</small><b>${o.c}/${o.n}</b><span>${o.secs}초</span></div><div class="vs">VS</div><div><small>나 (${esc(S.name)})</small><b>${G.c}/${n}</b><span>${G.secs}초</span></div></div><div class="h1 outcome ${G.outcome}">${{win:'도전 성공! 기록을 깼어요',lose:'아깝다, 기록을 못 깼어요',draw:'완전 동점!'}[G.outcome]}</div><p class="tiny muted" style="margin:0">맞힌 개수가 같으면 더 빨리 푼 사람이 이겨요.</p>`:'';
+  $('#shBody').innerHTML=`<div class="result">${duelHTML}<div class="tiny muted">${esc(G.set.title)}</div><div class="big num" style="margin-top:8px">${G.c}<span style="font-size:28px" class="muted"> / ${n}</span></div><div class="h1" style="font-size:20px;margin-top:10px"><span class="mark">${msg}</span></div>
+  <div class="rew"><div><span class="tiny muted">얻은 경험치</span><b class="num">+${G.xp} XP</b></div><div><span class="tiny muted">얻은 트로피</span><b class="num">+${G.tro}</b></div></div>
+  ${G.timeouts?`<p class="tiny" style="color:var(--bad)">시간 초과 ${G.timeouts}문제</p>`:''}
+  ${G.wrongN?`<p class="tiny muted">틀린 ${G.wrongN}문제는 오답 노트에 저장했어요. 나 탭에서 다시 풀 수 있어요.</p>`:''}
+  <p class="tiny muted">연속 학습 ${S.streak}일 · Lv.${lvOf(S.xp)}${CH_CODE[G.set.id]?` · 걸린 시간 ${G.secs}초`:''}</p>
+  ${CH_CODE[G.set.id]?`<button class="btn full hl" style="margin-top:6px" data-act="makeCh">${G.duel&&G.duel.recv?'되갚아 주기: 내 기록으로 도전장 보내기':'이 기록으로 도전장 보내기'}</button><button class="btn full ghost" style="margin-top:8px" data-act="wait">정식 출시 알림 받기</button>`:''}</div>`;
+  $('#shFoot').innerHTML=`<div class="row"><button class="btn ghost" style="flex:1" data-act="restart">다시 하기</button><button class="btn hl" style="flex:1" data-act="close">완료</button></div>`;
+}
+
+/* 공부 카드 */
+function startStudy(k){stopTimers();G={study:k,i:0,flip:false};openSheet(STUDY[k].title);drawStudy()}
+function drawStudy(){
+  const s=STUDY[G.study],c=s.cards[G.i],n=s.cards.length;prog(G.i+1,n);
+  $('#shBody').innerHTML=`<div class="kind"><span class="tag">공부</span><span class="tag tm">시험은 문제당 ${TEST_LIMIT[G.study]}초</span><span class="spacer"></span><span class="tiny muted num">${G.i+1} / ${n}</span></div>
+  <button class="flash" data-act="flip" aria-label="카드 뒤집기"><div><div class="w">${c.f}</div>${G.flip?`<div class="m">${c.m}</div><div class="e">${c.e}</div>`:'<div class="e">눌러서 뜻 보기</div>'}</div></button>
+  <p class="tiny muted" style="text-align:center;margin-top:14px">카드를 다 보면 바로 시험을 봐요. 공부한 내용만 나와요.</p>`;
+  $('#shFoot').innerHTML=`<div class="row"><button class="btn ghost" style="flex:1" data-act="sprev" ${G.i===0?'disabled':''}>이전</button>${G.i<n-1?`<button class="btn" style="flex:2" data-act="snext">다음 카드</button>`:`<button class="btn hl" style="flex:2" data-act="stest">시험 보기</button>`}</div>`;
+}
+
+/* 1분 퀴즈 (1시간에 1번) */
+function startQuick(){
+  const left=quickLeft();
+  if(left){toast(`1분 퀴즈는 1시간에 1번! 다음 도전까지 ${fmtLeft(left)}`);return}
+  stopTimers();
+  S.quickAt=Date.now();save();
+  G={quick:1,pool:shuffle(QUICK),i:0,c:0,w:0,end:Date.now()+60000,lock:false,swap:false,done:false};
+  openSheet('1분 퀴즈');drawQuick();G.timer=setInterval(tickQuick,100);
+}
+function drawQuick(){
+  const q=G.pool[G.i%G.pool.length];G.swap=Math.random()<.5;
+  const a=G.swap?[q[2],q[1]]:[q[1],q[2]];
+  $('#shBody').innerHTML=`<div class="score num"><span style="color:var(--good)">정답 ${G.c}</span><span style="color:var(--bad)">오답 ${G.w}</span></div><div class="qbig">${fmtQ(q[0])}</div><div class="qopts"><button data-act="qa" data-arg="0">${a[0]}</button><button data-act="qa" data-arg="1">${a[1]}</button></div>`;
+  $('#shFoot').innerHTML='';tickQuick();
+}
+function tickQuick(){
+  if(!G||!G.quick||G.done)return;
+  const left=Math.max(0,G.end-Date.now());
+  $('#shProg').innerHTML=`<div class="timer"><div class="bar" style="flex:1"><i style="width:${left/600}%;background:${left<10000?'var(--bad)':'var(--blue)'}"></i></div><b>${Math.ceil(left/1000)}초</b></div>`;
+  if(left<=0)finishQuick();
+}
+function quickAnswer(k,btn){
+  if(G.lock||G.done)return;G.lock=true;
+  const ok=(G.swap?1:0)===+k;
+  if(ok)G.c++;else G.w++;
+  btn.classList.add(ok?'ok':'no');
+  setTimeout(()=>{if(!G||G.done||!G.quick)return;G.lock=false;G.i++;drawQuick()},220);
+}
+function finishQuick(){
+  G.done=true;clearInterval(G.timer);G.timer=null;
+  touch();
+  const prevBest=S.spd.best;S.spd.games++;S.spd.best=Math.max(S.spd.best,G.c);
+  const xp=5+G.c*2;addXP(xp);addTro('quick',G.c);
+  completeQuest('quick','1분 퀴즈');
+  checkAch();save();
+  const acc=G.c+G.w?Math.round(G.c/(G.c+G.w)*100):0;
+  $('#shBody').innerHTML=`<div class="result"><div class="tiny muted">1분 퀴즈 결과</div><div class="big num" style="margin-top:8px">${G.c}<span style="font-size:24px" class="muted">개 정답</span></div><div class="h1" style="font-size:20px;margin-top:10px"><span class="mark">${G.c>prevBest?'최고 기록 경신!':'최고 기록 '+S.spd.best+'개'}</span></div>
+  <div class="rew"><div><span class="tiny muted">정확도</span><b class="num">${acc}%</b></div><div><span class="tiny muted">얻은 보상</span><b class="num">+${xp} XP</b></div></div>
+  <p class="tiny muted">트로피 +${G.c} · 정보 처리 속도 점수에 반영됐어요.<br>다음 도전은 1시간 뒤에 열려요.</p></div>`;
+  $('#shFoot').innerHTML=`<button class="btn hl full" data-act="close">완료</button>`;
+}
+
+/* 오늘의 단어 (하루 10개, 하루 1번, 아침 6시 리셋) */
+function openWord(){
+  stopTimers();
+  const review=wordDoneToday();
+  G={word:1,list:dailyWords(),i:0,flip:false,review};openSheet(review?'오늘의 단어 · 복습':'오늘의 단어 10개');drawWord();
+}
+function drawWord(){
+  const w=G.list[G.i],n=G.list.length;prog(G.i+1,n);
+  $('#shBody').innerHTML=`<div class="kind"><span class="tag">${gday().replace(/-/g,'.')}</span>${G.review?'<span class="tag">복습 · 보상 없음</span>':''}<span class="spacer"></span><span class="tiny muted num">${G.i+1} / ${n}</span></div>
+  <button class="flash" data-act="wflip"><div><div class="w">${w.w}</div>${G.flip?`<div class="m">${w.m}</div><div class="e">예) ${w.ex}</div>`:'<div class="e">눌러서 뜻 보기</div>'}</div></button>
+  <p class="tiny muted" style="text-align:center;margin-top:14px">하루 한 번, 10개를 끝까지 보면 완료. 아침 6시에 새 단어로 바뀌어요.</p>`;
+  const last=G.i===n-1;
+  $('#shFoot').innerHTML=`<div class="row"><button class="btn ghost" style="flex:1" data-act="wprev" ${G.i===0?'disabled':''}>이전</button>${!last?`<button class="btn" style="flex:2" data-act="wnext">다음 단어</button>`:G.review?`<button class="btn" style="flex:2" data-act="close">닫기</button>`:`<button class="btn hl" style="flex:2" data-act="wdone">10개 다 외웠어요</button>`}</div>`;
+}
+
+/* 모달 */
+function openModal(h){$('#mbox').innerHTML=h;$('#modal').classList.add('open');$('#mbox').scrollTop=0}
+function closeModal(){$('#modal').classList.remove('open')}
+const isSocial=L=>['소셜','친구 깨우기','링크 초대','커뮤니티'].includes(L.tag);
+function lockModal(key){
+  const L=LOCKED[key];const social=isSocial(L);
+  openModal(`<span class="tag lk">잠김 · 데모</span> <span class="tag">${L.tag}</span><h2>${L.t}</h2><p style="margin:0">${L.d}</p><ul>${L.r.map(x=>`<li>${x}</li>`).join('')}</ul>
+  <div class="notice">${social?'다른 사용자가 있어야 하는 기능이라':'여러 명이 함께하는 기능이라'} <b>데모 테스트 버전에서는 잠겨 있어요.</b> 화면과 규칙만 미리 볼 수 있고, 정식 버전에서 열릴 예정이에요.</div>
+  <button class="btn full" style="margin-top:12px" disabled>${IC.lock} ${social?'보내기':'매칭 시작'} · 잠김</button>
+  <div class="row" style="margin-top:8px"><button class="btn ghost" style="flex:1" data-act="interest" data-arg="${key}">${S.interest[key]?'기대돼요 취소':'이 기능 기대돼요'}</button><button class="btn ghost" style="flex:1" data-act="mclose">닫기</button></div>`);
+}
+let W={i:1,kind:'duel',mode:'chain'};
+function wakeModal(i){
+  W.i=+i;const f=FRIENDS[W.i];
+  const opts=[['wake-normal','하루 1번']];if(f.away)opts.push(['wake-streak','하루 1번']);
+  openModal(`<span class="tag lk">잠김 · 데모</span><h2>${f.n} 깨우기</h2><p class="tiny muted" style="margin:0">${f.last} · 예시 친구</p>
+  <div class="list" style="margin:14px 0">${opts.map(([k,r])=>`<button class="tap locked" data-act="lock" data-arg="${k}"><div class="t-title">${LOCKED[k].t} <span class="tag">${r}</span></div><div class="t-sub">${LOCKED[k].d}</div></button>`).join('')}
+  <button class="tap" data-act="together" data-arg="duel"><div class="t-title">함께하기 깨우기</div><div class="t-sub">1:1 경쟁 또는 협동을 골라 같이 하자고 신청해요</div></button></div>
+  <button class="btn full ghost" data-act="mclose">닫기</button>`);
+}
+function togetherModal(){
+  const f=FRIENDS[W.i];const modes=W.kind==='duel'?DUEL_MODES:COOP_MODES;
+  if(!modes.find(m=>m[0]===W.mode))W.mode=modes[0][0];
+  const mname=modes.find(m=>m[0]===W.mode)[1];
+  openModal(`<span class="tag lk">잠김 · 데모</span> <span class="tag">친구 깨우기</span><h2>${f.n}에게 함께하기 신청</h2>
+  <div class="tiny muted" style="margin:10px 0 4px">무엇을 같이 할까요?</div>
+  <div class="seg"><button data-act="wk" data-arg="duel" aria-pressed="${W.kind==='duel'}">1:1 경쟁</button><button data-act="wk" data-arg="coop" aria-pressed="${W.kind==='coop'}">협동</button></div>
+  <div class="tiny muted" style="margin:6px 0 4px">모드</div>
+  <div class="seg">${modes.map(([k,l])=>`<button data-act="wm" data-arg="${k}" aria-pressed="${W.mode===k}">${l}</button>`).join('')}</div>
+  <div class="invite"><div class="tiny muted">${f.n}에게 가는 알림 미리보기</div><div style="margin-top:4px;font-weight:600">${esc(S.name)}님이 ${W.kind==='duel'?`<b>${mname}</b> 1:1 대결`:`<b>${mname}</b> 협동`}을 같이 하자고 깨웠어요!</div></div>
+  <div class="notice">친구 기능은 다른 사용자가 있어야 해서 <b>데모에서는 잠겨 있어요.</b></div>
+  <button class="btn full" style="margin-top:12px" disabled>${IC.lock} 신청 보내기 · 잠김</button>
+  <div class="row" style="margin-top:8px"><button class="btn ghost" style="flex:1" data-act="wake" data-arg="${W.i}">‹ 뒤로</button><button class="btn ghost" style="flex:1" data-act="mclose">닫기</button></div>`);
+}
+/* ============ 도전장 (서버 없이 링크로) ============ */
+/* 링크 = 페이지 주소#d-세트코드-맞힌수-문제수-초-닉네임(16진수). 같은 문제로 상대 기록에 도전 */
+const CH_CODE={'case-crime':'cc','case-chat':'ct','case-persuade':'cp','case-exam':'ce','read-r1':'r1','read-r2':'r2','read-r3':'r3','pz-order':'po','pz-word':'pw','pz-gram':'pg','pz-blank':'pb'};
+const CH_SET=Object.fromEntries(Object.entries(CH_CODE).map(([k,v])=>[v,k]));
+const toHex=t=>Array.from(new TextEncoder().encode(t)).map(b=>b.toString(16).padStart(2,'0')).join('');
+const fromHex=h=>{try{return new TextDecoder().decode(new Uint8Array(h.match(/../g).map(x=>parseInt(x,16))))}catch(e){return''}};
+const makeCode=(setId,c,n,secs)=>`d-${CH_CODE[setId]}-${c}-${n}-${secs}-${toHex(S.name.slice(0,10))}`;
+function parseCode(raw){
+  const m=String(raw||'').trim().replace(/^[^#]*#/,'').match(/^d-([a-z0-9]{2})-(\d+)-(\d+)-(\d+)-([0-9a-f]*)$/i);
+  if(!m||!CH_SET[m[1]])return null;
+  return{set:CH_SET[m[1]],c:+m[2],n:+m[3],secs:+m[4],name:(fromHex(m[5])||'친구').slice(0,10)};
+}
+function shareLink(code){
+  let base=SHARE_BASE;
+  /* 다른 페이지 안에 끼워진 상태(예: Claude 아티팩트 화면)면 주소를 남이 열 수 없으니 코드만 보낸다 */
+  const inFrame=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+  if(!base&&!inFrame){try{if(location.protocol.startsWith('http'))base=location.origin+location.pathname}catch(e){}}
+  return base?base.replace(/#.*$/,'')+'#'+code:'';
+}
+let LASTCH=null,CARD_URL='',CARD_BLOB=null;
+function nickInput(id){return`<label class="tiny muted" for="${id}">도전장에 표시될 닉네임 (최대 10자)</label><input class="inp" id="${id}" maxlength="10" value="${esc(S.name)}" autocomplete="off">`}
+function readNick(id){const el=document.getElementById(id);if(el){const v=el.value.trim();if(v){S.name=v.slice(0,10);save()}}}
+function chPickModal(){
+  openModal(`<span class="tag hl">도전장</span><h2>무엇으로 도전할까요?</h2>${nickInput('nick')}
+  <div class="tiny muted" style="margin:14px 0 6px">문제를 풀면 그 기록으로 도전장이 만들어져요</div>
+  <div class="grid2">${Object.keys(CH_CODE).map(id=>`<button class="tap" style="padding:10px 12px" data-act="chStart" data-arg="${id}"><div class="t-title" style="font-size:14px">${SETS[id].title}</div><div class="t-sub tiny">${FIELD[fieldOf(id)]} · ${SETS[id].ids.length}문제</div></button>`).join('')}</div>
+  <div class="tiny muted" style="margin:16px 0 6px">실시간 1:1 대결 · 협동 도전장 (데모에서는 잠김)</div>
+  <div class="seg" style="flex-wrap:wrap">${[...DUEL_MODES,...COOP_MODES].map(([k,l])=>`<button data-act="lock" data-arg="${k}">${l}</button>`).join('')}</div>
+  <button class="btn full ghost" style="margin-top:8px" data-act="mclose">닫기</button>`);
+}
+function openChallenge(ch){
+  LASTCH={recvPending:ch};
+  const s=SETS[ch.set];
+  openModal(`<span class="tag hl">도전장 도착</span><h2>⚔️ ${esc(ch.name)}님의 도전장</h2>
+  <div class="invite"><div class="tiny muted">${FIELD[fieldOf(ch.set)]} · ${s.title}</div><div class="price">${ch.c} / ${ch.n} <span class="tiny muted" style="font-family:var(--body);font-weight:600">${ch.secs}초</span></div><div class="tiny">같은 문제로 이 기록을 깨 보세요. 맞힌 개수가 같으면 더 빨리 푼 사람이 이겨요.</div></div>
+  ${nickInput('nick')}
+  <button class="btn full hl" style="margin-top:12px" data-act="acceptCh">도전 수락</button>
+  <button class="btn full ghost" style="margin-top:8px" data-act="mclose">나중에</button>`);
+}
+function challengeShareModal(){
+  const code=makeCode(G.set.id,G.c,G.ids.length,G.secs);
+  const link=shareLink(code);
+  const o=G.duel&&G.duel.recv;
+  LASTCH={code,link,set:G.set.id,c:G.c,n:G.ids.length,secs:G.secs,vs:o?{...o,outcome:G.outcome}:null};
+  const msg=`⚔️ ${S.name}의 THINKY 도전장! [${SETS[G.set.id].title}] ${G.c}/${G.ids.length} (${G.secs}초) 깰 수 있어?`;
+  LASTCH.msg=msg+(link?' '+link:' 도전장 코드: '+code);
+  openModal(`<span class="tag hl">도전장</span><h2>내 기록으로 도전장 보내기</h2>
+  ${nickInput('nick2')}<button class="btn sm ghost" style="margin-top:6px" data-act="nickApply">닉네임 적용</button>
+  <div class="invite"><div class="tiny muted">친구에게 가는 메시지</div><div style="margin-top:4px;font-weight:600">${esc(msg)}</div>${link?`<div class="link">${esc(link)}</div>`:''}</div>
+  <div class="row"><button class="btn hl" style="flex:1" data-act="copyCh">메시지 복사</button><button class="btn ghost" style="flex:1" data-act="cardCh">결과 카드 만들기</button></div>
+  <p class="tiny muted">카톡·DM·인스타에 붙여 넣으면 돼요. 링크가 안 열리면 친구에게 이 코드를 보내 친구 탭 ‘도전장 붙여 넣기’에 넣게 하세요.<br><b style="color:var(--ink);word-break:break-all">${code}</b></p>
+  <button class="btn full ghost" data-act="mclose">닫기</button>`);
+}
+function copyText(t){
+  const done=()=>toast('복사했어요. 카톡이나 DM에 붙여 넣으세요');
+  const fallback=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();ok?done():toast('복사가 막혀 있어요. 코드를 길게 눌러 복사해 주세요')};
+  try{navigator.clipboard.writeText(t).then(done,fallback)}catch(e){fallback()}
+}
+/* 인스타 피드 비율(4:5) 결과 카드 */
+function wrapText(ctx,text,maxW){const out=[];let line='';for(const ch of text){if(ctx.measureText(line+ch).width>maxW&&line){out.push(line);line=ch}else line+=ch}if(line)out.push(line);return out}
+function makeCard(){
+  const c=LASTCH,W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+  const F=(w,sz)=>`${w} ${sz}px 'Gothic A1','IBM Plex Sans KR','Apple SD Gothic Neo',sans-serif`;
+  x.fillStyle='#f2f4f8';x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(43,79,224,.08)';x.lineWidth=2;for(let i=0;i<W;i+=54){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke()}for(let j=0;j<H;j+=54){x.beginPath();x.moveTo(0,j);x.lineTo(W,j);x.stroke()}
+  x.fillStyle='#151c45';x.fillRect(0,0,W,170);
+  x.fillStyle='#fff';x.font=F(800,64);x.textBaseline='middle';x.fillText('THINKY 도전장',72,88);
+  x.fillStyle='#ffd93b';x.font=F(700,34);x.textAlign='right';x.fillText(FIELD[fieldOf(c.set)],W-72,90);x.textAlign='left';
+  x.fillStyle='#151c45';x.font=F(800,60);let y=270;wrapText(x,SETS[c.set].title,W-144).slice(0,2).forEach(l=>{x.fillText(l,72,y);y+=80});
+  x.font=F(800,230);const sc=`${c.c} / ${c.n}`;const sw=x.measureText(sc).width;
+  x.fillStyle='#ffd93b';x.fillRect(72,y+175,sw,48);x.fillStyle='#151c45';x.fillText(sc,72,y+130);
+  x.font=F(700,52);x.fillStyle='#596185';x.fillText(`${c.secs}초`,72,y+300);
+  y+=400;
+  if(c.vs){x.font=F(700,46);x.fillStyle='#151c45';x.fillText(`vs ${c.vs.name} ${c.vs.c}/${c.vs.n} · ${c.vs.secs}초`,72,y);x.fillStyle=c.vs.outcome==='win'?'#12895a':c.vs.outcome==='lose'?'#d23f35':'#151c45';x.font=F(800,58);x.fillText({win:'기록 깨기 성공!',lose:'아깝게 패배…',draw:'완전 동점!'}[c.vs.outcome],72,y+80);y+=170}
+  x.fillStyle='#151c45';x.font=F(800,64);x.fillText(`${S.name}의 기록,`,72,y);x.fillText('깰 수 있어?',72,y+86);
+  x.fillStyle='#596185';x.font=F(600,32);x.fillText('Thinking & Intelligence Gaming Platform',72,H-110);
+  x.font=F(600,30);x.fillText('도전장 코드  '+c.code,72,H-62);
+  return cv;
+}
+function cardModal(){
+  const cv=makeCard();CARD_URL=cv.toDataURL('image/png');CARD_BLOB=null;try{cv.toBlob(b=>{CARD_BLOB=b})}catch(e){}
+  openModal(`<span class="tag hl">결과 카드</span><h2>인스타·카톡에 올리기</h2><img class="cardimg" src="${CARD_URL}" alt="도전장 결과 카드">
+  <div class="row"><button class="btn hl" style="flex:1" data-act="shareCard">공유하기</button><a class="btn ghost" style="flex:1;text-decoration:none" href="${CARD_URL}" download="thinky-dojeonjang.png">이미지 저장</a></div>
+  <p class="tiny muted">저장이 안 되면 이미지를 길게 눌러 저장하세요. 카드와 함께 도전장 링크도 보내야 친구가 바로 도전할 수 있어요.</p>
+  <button class="btn full ghost" data-act="mclose">닫기</button>`);
+}
+async function shareCard(){
+  try{
+    const blob=CARD_BLOB||await new Promise(r=>makeCard().toBlob(r));
+    const file=new File([blob],'thinky-dojeonjang.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:LASTCH.msg});return}
+    if(navigator.share){await navigator.share({text:LASTCH.msg});return}
+    throw new Error('no share');
+  }catch(e){if(e&&e.name==='AbortError')return;toast('여기서는 바로 공유가 안 돼요. 이미지를 저장한 뒤 올려 주세요')}
+}
+function waitModal(){
+  S.m.wait++;save();
+  openModal(`<span class="tag hl">정식 출시 알림</span><h2>대기자 등록</h2><p style="margin:0">정식 앱이 나오면 가장 먼저 알려 드려요. 대기자에게는 출시 기념 한정 칭호를 줄 예정이에요.</p>
+  <ul><li>만 14세 이상만 직접 등록할 수 있어요. 만 14세 미만은 보호자 동의가 필요해요.</li><li>받는 정보는 알림을 보낼 연락처 하나뿐이에요.</li></ul>
+  ${WAITLIST_URL?`<a class="btn full hl" style="text-decoration:none" href="${esc(WAITLIST_URL)}" target="_blank" rel="noopener">대기자 등록하러 가기</a>`:`<button class="btn full" disabled>대기자 등록 · 준비 중</button><p class="tiny muted">운영자 안내: 코드 맨 위 WAITLIST_URL에 폼 주소를 넣으면 버튼이 열려요.</p>`}
+  <button class="btn full ghost" style="margin-top:8px" data-act="mclose">닫기</button>`);
+}
+const PRICE={A:4900,B:9900};
+function premModal(after){
+  if(!after){S.m.premView++;save()}
+  const price=PRICE[S.priceArm];
+  openModal(`<span class="tag hl">준비 중</span><h2>THINKY 프리미엄</h2><div class="price num">월 ${price.toLocaleString()}원</div>
+  <ul><li>AI 서술형 첨삭 무제한 (무료는 하루 1개)</li><li>능력 성장 리포트 상세판, 보호자에게 공유</li><li>프리미엄 한정 칭호·테두리</li><li>랭크·트로피에는 영향 없음: 실력으로만 경쟁</li></ul>
+  <p class="tiny muted">만 19세 미만은 보호자 동의 후 결제할 수 있어요.</p>
+  ${after||S.prem?`<div class="notice">답해 줘서 고마워요${S.prem?` (‘${S.prem.ans==='yes'?'결제할래요':'안 할래요'}’)`:''}. 출시 알림을 받으려면 대기자 등록을 해 주세요.</div><button class="btn full hl" style="margin-top:10px" data-act="wait">대기자 등록</button>`
+  :`<div class="row"><button class="btn hl" style="flex:1" data-act="premAns" data-arg="yes">출시되면 결제할래요</button><button class="btn ghost" style="flex:1" data-act="premAns" data-arg="no">이 가격이면 안 할래요</button></div>`}
+  <button class="btn full ghost" style="margin-top:8px" data-act="mclose">닫기</button>`);
+}
+function checkHash(){
+  let h='';try{h=location.hash}catch(e){}
+  const ch=parseCode(h);
+  if(ch){openChallenge(ch);try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
+}
+
+/* ============ 이벤트 ============ */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,arg=b.dataset.arg;
+  if(act==='mclose'&&b.id==='modal'&&e.target!==b)return;
+  switch(act){
+  case 'tab':if(TAB==='play'&&arg==='play')PLAYSUB=null;TAB=arg;closeModal();render();$('#main').scrollTop=0;break;
+  case 'sub':PLAYSUB=arg||null;render();$('#main').scrollTop=0;break;
+  case 'set':startSet(arg);break;
+  case 'study':startStudy(arg);break;
+  case 'go':{if(arg==='quick')startQuick();else if(arg==='word')openWord();else if(arg.startsWith('set:'))startSet(arg.slice(4));else if(arg.startsWith('study:'))startStudy(arg.slice(6));break}
+  case 'lock':closeModal();setTimeout(()=>lockModal(arg),0);break;
+  case 'wake':wakeModal(arg);break;
+  case 'together':W.kind=arg||'duel';togetherModal();break;
+  case 'wk':W.kind=arg;togetherModal();break;
+  case 'wm':W.mode=arg;togetherModal();break;
+  case 'chPick':chPickModal();break;
+  case 'chStart':readNick('nick');closeModal();startSet(arg);G.duel={send:1};break;
+  case 'chEnter':{const v=($('#chIn')||{}).value;const ch=parseCode(v);if(ch)openChallenge(ch);else toast('도전장 코드를 다시 확인해 주세요');break}
+  case 'acceptCh':{const ch=LASTCH&&LASTCH.recvPending;if(!ch)break;readNick('nick');S.m.chRecv++;save();closeModal();startSet(ch.set);G.duel={recv:ch};break}
+  case 'makeCh':challengeShareModal();break;
+  case 'nickApply':readNick('nick2');challengeShareModal();toast('닉네임을 바꿨어요');break;
+  case 'copyCh':S.m.chSent++;save();copyText(LASTCH.msg);break;
+  case 'cardCh':cardModal();break;
+  case 'shareCard':shareCard();break;
+  case 'wait':closeModal();setTimeout(waitModal,0);break;
+  case 'prem':premModal();break;
+  case 'premAns':S.prem={arm:S.priceArm,price:PRICE[S.priceArm],ans:arg};save();premModal(true);if(TAB==='me')render();break;
+  case 'mclose':closeModal();break;
+  case 'interest':S.interest[arg]=!S.interest[arg];save();toast(S.interest[arg]?'기대 기능에 담았어요':'기대 기능에서 뺐어요');lockModal(arg);if(TAB==='me')render();break;
+  case 'close':closeSheet();break;
+  case 'beginQ':G.phase='q';goQ();break;
+  case 'pick':if(G.picked!==null||G.fb)break;G.picked=+arg;grade(+arg===G.ans);drawGame();break;
+  case 'ordAdd':if(G.fb)break;G.sel.push(+arg);drawGame();break;
+  case 'ordDel':if(G.fb)break;G.sel.splice(+arg,1);drawGame();break;
+  case 'ordCheck':{if(G.fb)break;const ok=G.sel.every((v,i)=>v===i);grade(ok);drawGame();break}
+  case 'mL':if(G.fb)break;G.selL=+arg;G.bad=null;drawGame();break;
+  case 'mR':{if(G.fb)break;if(G.selL===null){toast('왼쪽 단어를 먼저 골라요');break}const i=+arg;
+    if(i===G.selL){G.done.push(i);G.selL=null;G.bad=null;const it=IT[G.ids[G.i]];if(G.done.length===it.pairs.length)grade(G.miss===0);drawGame()}
+    else{G.miss++;G.bad=[G.selL,i];G.selL=null;drawGame();const cur=G.i;setTimeout(()=>{if(G&&G.bad&&G.i===cur&&!G.fb){G.bad=null;drawGame()}},900)}break}
+  case 'next':G.i++;if(G.i>=G.ids.length)finishSet();else goQ();break;
+  case 'restart':{const id=G.set.id;if(id==='note'){if(S.note.length)startSet('note',S.note.filter(x=>IT[x]));else closeSheet()}else startSet(id);break}
+  case 'flip':G.flip=!G.flip;drawStudy();break;
+  case 'snext':G.i++;G.flip=false;drawStudy();break;
+  case 'sprev':G.i--;G.flip=false;drawStudy();break;
+  case 'stest':startSet('test-'+G.study);break;
+  case 'qa':quickAnswer(arg,b);break;
+  case 'wflip':G.flip=!G.flip;drawWord();break;
+  case 'wnext':G.i++;G.flip=false;drawWord();break;
+  case 'wprev':G.i--;G.flip=false;drawWord();break;
+  case 'wdone':if(!wordDoneToday()){touch();addXP(10);addTro('word',3);S.wordDone=gday();completeQuest('word','오늘의 단어');checkAch();save();toast('오늘의 단어 완료 +10 XP · 트로피 +3')}closeSheet();break;
+  case 'claim':if(questDone()&&!S.q.claimed){S.q.claimed=1;S.st.questDays++;addXP(30);toast('일일 퀘스트 보상 +30 XP');checkAch();save();render()}break;
+  case 'hideIntro':S.introHidden=true;save();render();break;
+  case 'note':startSet('note',S.note.filter(id=>IT[id]));break;
+  case 'sim':sim(arg);render();break;
+  case 'tf':trophyField=arg;render();break;
+  case 'comm':COMM=arg;render();break;
+  case 'vote':{const[p,v]=arg.split(':');S.votes[p]=v;save();render();break}
+  case 'unvote':delete S.votes[arg];save();render();break;
+  case 'best':{const[p,v]=arg.split(':');S.best[p]=S.best[p]===+v?undefined:+v;save();render();break}
+  case 'setTitle':S.title=arg;save();render();break;
+  case 'setFrame':S.frame=arg;save();render();break;
+  case 'resetAsk':openModal(`<h2>처음으로 되돌릴까요?</h2><p>XP, 트로피, 오답 노트, 업적, 퀘스트, 1분 퀴즈 대기 시간이 체험 계정 시작 상태로 돌아가요. 이 기기에서만 적용돼요.</p><div class="row"><button class="btn ghost" style="flex:1" data-act="mclose">취소</button><button class="btn" style="flex:1;background:var(--bad);border-color:var(--bad)" data-act="reset">되돌리기</button></div>`);break;
+  case 'reset':S=seed();save();closeModal();TAB='home';PLAYSUB=null;render();toast('데모 기록을 처음으로 되돌렸어요');break;
+  }
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal').classList.contains('open'))closeModal();else if(sheet.classList.contains('open'))closeSheet()}});
+
+/* 남은 시간 표시: 1초마다 갱신, 날짜가 바뀌거나 1분 퀴즈가 열리면 다시 그림 */
+let wasQuickOpen=quickLeft()===0;
+setInterval(()=>{
+  const dayChanged=ensureDay();const open=quickLeft()===0;
+  if((dayChanged||open!==wasQuickOpen)&&!sheet.classList.contains('open')){wasQuickOpen=open;render();return}
+  wasQuickOpen=open;
+  document.querySelectorAll('[data-cd="quick"]').forEach(el=>{const l=quickLeft();el.textContent=l?'다음 도전까지 '+fmtLeft(l):(el.closest('.feat')?'지금 도전 가능 · 최고 '+S.spd.best+'개':'지금 도전 가능')});
+  document.querySelectorAll('[data-cd="word"]').forEach(el=>{if(wordDoneToday())el.textContent=(el.closest('.t-meta')?'':'완료 · ')+'새 단어까지 '+fmtLeft(nextReset()-Date.now())});
+},1000);
+render();
+checkHash();
+window.addEventListener('hashchange',checkHash);
+</script>
+</body>
+</html>
