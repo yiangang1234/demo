@@ -296,6 +296,91 @@ details.pv .passage{border:0;border-top:1px dashed var(--line);border-radius:0 0
 .toast{position:absolute;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:60;transition:opacity .2s,transform .2s;max-width:90%;text-align:center;box-shadow:3px 3px 0 var(--hl)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== v5 테마: 밝은 게임 플랫폼 (주황빛 레드 브랜드 + 남색 + 골드) ===== */
+:root{--paper:#F3F4FA;--card:#fff;--ink:#1B1E3C;--muted:#6B7094;--line:#E2E5F1;--blue:#4C6FFF;--hl:#FFD43B;--good:#16B364;--bad:#F04438;--lock:#A3A8C3;
+  --brand:#FF5A36;--brand-d:#D9431F;--gold:#FFC53D;--gold-d:#D99A0B;--navy:#1B1E3C;--navy-d:#0B0D22}
+body{background:var(--navy)}
+#app{background-image:none;background-color:var(--paper)}
+.top{background:#fff;border-bottom:1px solid var(--line)}
+.logo{font-size:23px;letter-spacing:-.03em}.logo .du{color:var(--brand)}
+.logo small{border:0;background:var(--paper);color:var(--muted);border-radius:6px;padding:2px 6px}
+.chip{border:0;background:var(--paper);padding:4px 9px}
+.tierchip{background:var(--paper);border:0}
+.tabs{border-top:1px solid var(--line);background:#fff}
+.tabs button svg{box-sizing:content-box;padding:3px 12px;border-radius:12px}
+.tabs button[aria-current="page"]{color:var(--brand)}
+.tabs button[aria-current="page"] svg{background:#FFE8E1}
+.tabs button[aria-current="page"] span{border-bottom-color:transparent;font-weight:800}
+.mark{background:linear-gradient(#FFE08A,#FFE08A) left bottom/100% .32em no-repeat}
+.card{border:0;border-radius:20px;box-shadow:0 1px 0 var(--line),0 6px 20px rgba(27,30,60,.06)}
+.tap{border:2px solid var(--line);border-radius:18px;box-shadow:0 4px 0 var(--line)}
+.tap:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.tap.locked{border:2px dashed #D5D9EA;box-shadow:none;background:#F8F9FC}
+.tap.off{box-shadow:0 2px 0 var(--line);background:#FAFAFD}
+.feat{background:linear-gradient(135deg,#FF5A36,#FF8A3D);border-color:transparent;color:#fff;box-shadow:0 4px 0 var(--brand-d)}
+.feat:active{box-shadow:0 1px 0 var(--brand-d)}
+.feat .t-sub,.feat .t-meta,.feat .tro{color:rgba(255,255,255,.9)}
+.btn{border:0;border-radius:14px;background:var(--navy);box-shadow:0 4px 0 var(--navy-d);transition:transform .06s,box-shadow .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--navy-d)}
+.btn.hl{background:var(--gold);color:var(--navy);box-shadow:0 4px 0 var(--gold-d)}
+.btn.hl:active{box-shadow:0 1px 0 var(--gold-d)}
+.btn.brand{background:var(--brand);color:#fff;box-shadow:0 4px 0 var(--brand-d)}
+.btn.brand:active{box-shadow:0 1px 0 var(--brand-d)}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:0 4px 0 var(--line)}
+.btn.ghost:active{box-shadow:0 1px 0 var(--line)}
+.btn[disabled]{box-shadow:none;transform:none;border:2px dashed var(--lock)}
+.bar{border:0;background:#E6E9F5}
+.bar.hlb i{background:linear-gradient(90deg,#FFC53D,#FF8A3D)}
+.flame{border:0;background:linear-gradient(135deg,#FFE27A,#FFB020);box-shadow:0 3px 0 #D99A0B}
+.notice{border:0;background:#FFF4D1}
+.seg button{border:2px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.tag.hl{border-color:transparent}
+.sheet{background-image:none}
+.sh-head{background:#fff;border-bottom:1px solid var(--line)}
+.sh-foot{border-top:1px solid var(--line)}
+.x{border:2px solid var(--line)}
+.opt,.piece,.mbtn,.ctx,.passage,details.pv,.exam,.slots{border-width:2px;border-color:var(--line)}
+.opt{box-shadow:0 3px 0 var(--line)}
+.qopts button{border:2px solid var(--line);box-shadow:0 4px 0 var(--line)}
+.flash{border:2px solid var(--line);box-shadow:0 5px 0 var(--line)}
+.rew div,.vsbox>div:not(.vs),.invite,.post{border:2px solid var(--line)}
+.mbox{border-top:0;border-radius:24px 24px 0 0}
+.ck{border-color:var(--line)}
+/* 눈에 띄는 배너 */
+.promo{display:grid;grid-template-columns:46px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-radius:20px;padding:16px;color:#fff;transition:transform .06s,box-shadow .06s}
+.promo .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.22)}
+.promo .ic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.promo b{display:block;font-family:var(--display);font-weight:800;font-size:18px;line-height:1.3}
+.promo small{display:block;font-size:12.5px;opacity:.92;margin-top:2px}
+.promo .go{font-weight:800;font-size:24px;line-height:1}
+.promo:active{transform:translateY(3px)}
+.promo.duel{background:linear-gradient(135deg,#FF5A36,#FF2D6F);box-shadow:0 5px 0 #B8233F}
+.promo.duel:active{box-shadow:0 2px 0 #B8233F}
+.promo.pro{background:linear-gradient(135deg,#FFD84F,#FF9F1C);color:#3A2600;box-shadow:0 5px 0 #C9790A}
+.promo.pro:active{box-shadow:0 2px 0 #C9790A}
+.promo.pro .ic{background:rgba(255,255,255,.5)}
+.promo.wait{background:var(--navy);box-shadow:0 5px 0 var(--navy-d)}
+.promo.wait:active{box-shadow:0 2px 0 var(--navy-d)}
+.promo.wait .ic{color:var(--gold)}
+.promo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.promo-grid .promo{grid-template-columns:1fr;gap:10px;padding:14px;align-content:start}
+.shine{position:relative;overflow:hidden}
+.shine::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);animation:shine 3.4s infinite;pointer-events:none}
+@keyframes shine{0%,55%{left:-60%}100%{left:130%}}
+/* 플레이 카테고리: 모드마다 고유 색 */
+.cat{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center}
+.cat .ci{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--c);box-shadow:0 3px 0 var(--cd)}
+.cat .ci svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cat.locked .ci{background:#CDD1E3;box-shadow:none}
+.cat .t-title{font-size:17px}
+.cat-r{display:grid;justify-items:end;gap:4px}
+.sublist .tap:not(.locked){border-left:6px solid var(--c)}
+.subhead{display:flex;align-items:center;gap:12px;margin-top:14px}
+.subhead .ci{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--c);box-shadow:0 3px 0 var(--cd);flex:none}
+.subhead .ci svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@media (prefers-reduced-motion:reduce){.shine::after{display:none}}
 </style>
 </head>
 <body>
@@ -320,7 +405,7 @@ details.pv .passage{border:0;border-top:1px dashed var(--line);border-radius:0 0
 /* GitHub Pages 등에 올린 주소를 넣으면 도전장 링크가 그 주소로 만들어져요. 비워 두면 지금 페이지 주소를 써요. 예: 'https://아이디.github.io/thinky/' */
 /* 앱 이름: 여기 한 줄만 바꾸면 로고·도전장 메시지·결과 카드·프리미엄 화면이 모두 바뀌어요 */
 const APP_NAME='Readuel';
-const SHARE_BASE='https://yiangang1234.github.io/demo/';
+const SHARE_BASE='';
 /* 대기자 등록 폼(구글 폼, Tally 등) 주소. 비워 두면 등록 버튼이 비활성화돼요. */
 const WAITLIST_URL='';
 
@@ -354,8 +439,21 @@ const IC={
  league:'<svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>',
  community:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg>',
  friends:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.2a5 5 0 0 1 5.5 5"/></svg>',
- me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
+ me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+ swords:'<svg viewBox="0 0 24 24"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M9.5 6.5L13 3h3v3l-3.5 3.5M5 14l-2 2M8 17l-4 4M3 19l2 2"/></svg>',
+ crown:'<svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/><path d="M5 19h14"/></svg>',
+ bell:'<svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>'
 };
+const CATIC={
+ case:'<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg>',
+ read:'<svg viewBox="0 0 24 24"><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z"/><path d="M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/></svg>',
+ puzzle:'<svg viewBox="0 0 24 24"><path d="M5 5h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4h-4a2 2 0 1 0-4 0H5v-4a2 2 0 1 0 0-4z"/></svg>',
+ study:'<svg viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/></svg>',
+ quick:'<svg viewBox="0 0 24 24"><path d="M13 2L5 14h6l-1 8 8-12h-6z"/></svg>',
+ comp:'<svg viewBox="0 0 24 24"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M9.5 6.5L13 3h3v3l-3.5 3.5M5 14l-2 2M8 17l-4 4M3 19l2 2"/></svg>',
+ coop:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.2a5 5 0 0 1 5.5 5"/></svg>'
+};
+const CATCOL={case:['#FF5A36','#D9431F'],read:['#2E90FA','#1570CD'],puzzle:['#8B5CF6','#6D3FD9'],study:['#12B76A','#0A8A50'],quick:['#F79009','#C46E00'],comp:['#F63D68','#C01048'],coop:['#0BA5EC','#0086C9']};
 const troHTML=n=>`<span class="tro">${IC.trophy}${n}</span>`;
 
 /* ============ 콘텐츠 ============ */
@@ -708,6 +806,8 @@ home(){
       </div>
     </div>
   </div>
+  <button class="promo duel" style="margin-top:14px" data-act="chPick"><span class="ic">${IC.swords}</span><span><b>친구에게 도전장 보내기</b><small>내 기록, 깰 수 있어? 링크 하나로 바로 대결</small></span><span class="go">›</span></button>
+  <div class="promo-grid"><button class="promo pro shine" data-act="prem"><span class="ic">${IC.crown}</span><span><b>프리미엄</b><small>준비 중 · 가격 미리 보기</small></span></button><button class="promo wait" data-act="wait"><span class="ic">${IC.bell}</span><span><b>출시 알림 받기</b><small>대기자 한정 칭호 지급</small></span></button></div>
   <div class="sec">일일 퀘스트 <small>아침 6시 리셋 · 모두 끝내면 +30 XP</small></div>
   <div class="card">
     ${quests.map(([k,t,go])=>`<div class="quest"><span class="ck ${S.q[k]?'on':''}">${S.q[k]?IC.check:''}</span><span>${t}<br><span class="tiny muted">+${QXP[k]} XP</span></span>${S.q[k]?'<span class="tiny muted">완료</span>':`<button class="btn sm ghost" data-act="go" data-arg="${go}">하기</button>`}</div>`).join('')}
@@ -720,7 +820,6 @@ home(){
   </div>
   <div class="sec">오답 노트 <small>${S.note.length}문제</small></div>
   <div class="card">${S.note.length?S.note.filter(id=>IT[id]).slice(0,4).map(id=>`<div class="ach"><span class="medal">${IC.medal}</span><span class="tiny">${esc(plainQ(IT[id].title||IT[id].q))}<br><span class="muted">${IT[id].kind} · ${(S.wrong[id]||1)}번 틀림</span></span><span></span></div>`).join('')+(S.note.length>4?`<div class="tiny muted" style="margin-top:6px">외 ${S.note.length-4}문제</div>`:'')+`<button class="btn full" style="margin-top:10px" data-act="note">오답 다시 풀기 (${S.note.length})</button>`:'<div class="tiny muted">오답 노트가 비어 있어요. 틀린 문제는 자동으로 여기 저장돼요.</div>'}</div>
-  <div class="cta-row"><button class="tap" data-act="wait"><div class="t-title">정식 출시 알림</div><div class="t-sub">대기자 등록하기</div></button><button class="tap" data-act="prem"><div class="t-title">프리미엄</div><div class="t-sub">준비 중 · 미리 보기</div></button></div>
   ${wk?`<div class="sec">맞춤 추천 <small>능력 대시보드 기준</small></div>
   <button class="tap" data-act="go" data-arg="${REC[wk]}"><div class="t-title">${recTitle(wk)}</div><div class="t-sub">요즘 <b>${AB[wk]}</b>이 가장 낮아요 (${pct(wk)}점). 이 콘텐츠가 ${AB[wk]}을 집중적으로 키워요.</div></button>`:''}
   <div class="sec">친구 깨우기 <small>예시 친구</small></div>
@@ -730,15 +829,15 @@ play(){
   if(PLAYSUB){
     const c=CATS.find(x=>x.k===PLAYSUB);
     return `<button class="back" data-act="sub" data-arg="">‹ 플레이</button>
-    <div class="t-head" style="margin-top:14px;align-items:center"><h1 class="h1"><span class="mark">${c.t}</span></h1>${c.locked?lockTag:`<span class="tro" style="font-size:16px">${IC.trophy}${catTro(c)}</span>`}</div>
+    <div class="subhead" style="--c:${CATCOL[c.k][0]};--cd:${CATCOL[c.k][1]}"><span class="ci">${CATIC[c.k]}</span><h1 class="h1" style="flex:1">${c.t}</h1>${c.locked?lockTag:`<span class="tro" style="font-size:16px">${IC.trophy}${catTro(c)}</span>`}</div>
     <p class="muted" style="margin:6px 0 16px">${c.locked?'여러 명이 함께하는 모드라 데모에서는 규칙만 볼 수 있어요.':c.d}</p>
-    <div class="list">${c.modes.map(modeCard).join('')}</div>`;
+    <div class="list sublist" style="--c:${CATCOL[c.k][0]}">${c.modes.map(modeCard).join('')}</div>`;
   }
   const fc=CATS.find(c=>c.modes.includes(feat()));
   return `
   <h1 class="h1"><span class="mark">플레이</span></h1>
   <p class="muted" style="margin:6px 0 16px">모드를 누르면 세부 모드가 나와요. 오른쪽 숫자는 그 모드에서 모은 트로피예요.</p>
-  <div class="list">${CATS.map((c,i)=>`<button class="tap cat ${c.locked?'locked':''} ${i===0?'feat':''}" data-act="sub" data-arg="${c.k}"><div class="t-head"><div class="t-title">${c.locked?IC.lock:''}${c.t}${c===fc?' <span class="tag hl">오늘의 콘텐츠</span>':''}</div>${c.locked?lockTag:troHTML(catTro(c))}</div><div class="t-sub">${c.d}</div><div class="t-meta"><span>세부 모드 ${c.modes.length}개</span><span>›</span></div></button>`).join('')}</div>`;
+  <div class="list">${CATS.map(c=>{const col=CATCOL[c.k];return`<button class="tap cat ${c.locked?'locked':''}" style="--c:${col[0]};--cd:${col[1]}" data-act="sub" data-arg="${c.k}"><span class="ci">${CATIC[c.k]}</span><span><span class="t-title">${c.t}${c===fc?' <span class="tag hl">오늘의 콘텐츠</span>':''}</span><span class="t-sub" style="display:block">${c.d}</span></span><span class="cat-r">${c.locked?lockTag:troHTML(catTro(c))}<span class="tiny muted">${c.modes.length}개 ›</span></span></button>`}).join('')}</div>`;
 },
 league(){
   const now=new Date(),y=now.getFullYear(),m=now.getMonth(),sn=Math.floor(m/2)+1;
@@ -814,7 +913,7 @@ friends(){
   <div class="sec">친구 목록 <small>예시</small></div>
   <div class="card">${FRIENDS.map((f,i)=>`<div class="fr"><span class="ava ${f.on?'on':''}">${f.n[0]}</span><span><b>${f.n}</b> <span class="tiny muted">${f.t}</span><br><span class="tiny ${f.away?'':'muted'}" style="${f.away?'color:var(--bad)':''}">${f.last}</span></span><button class="btn sm ${f.away?'hl':'ghost'}" data-act="wake" data-arg="${i}">깨우기</button></div>`).join('')}</div>
   <div class="sec">도전장 <small>앱이 없는 친구에게도</small></div>
-  <button class="tap feat" data-act="chPick"><div class="t-title">도전장 보내기</div><div class="t-sub">문제를 풀고 내 기록을 링크로 보내면, 친구가 같은 문제로 내 기록에 도전해요</div><div class="t-meta"><span>보낸 도전장 ${S.m.chSent} · 받은 도전장 ${S.m.chRecv}</span><span>›</span></div></button>
+  <button class="promo duel" data-act="chPick"><span class="ic">${IC.swords}</span><span><b>도전장 보내기</b><small>보낸 도전장 ${S.m.chSent} · 받은 도전장 ${S.m.chRecv}</small></span><span class="go">›</span></button>
   <div class="card" style="margin-top:10px"><label class="tiny muted" for="chIn">받은 도전장 링크나 코드 붙여 넣기</label><div class="row" style="margin-top:2px"><input class="inp" id="chIn" placeholder="d-cc-2-2-41-…" autocomplete="off"><button class="btn sm" style="margin-top:4px" data-act="chEnter">열기</button></div></div>
   <div class="sec">깨우기 종류</div>
   <div class="list"><div class="grid2">${lockCard('wake-normal','간단한 알림 · 하루 1번')}${lockCard('wake-streak','3일+ 미접속 친구 · 하루 1번')}</div>${lockCard('wake-together','1:1 경쟁 또는 협동 중에서 골라 같이 하자고 신청')}</div>
@@ -854,7 +953,7 @@ me(){
   <div class="card">${ACH.map(a=>{if(a.locked)return`<div class="ach"><span class="medal" style="border-style:dashed;color:var(--lock)">${IC.lock}</span><span class="tiny"><b>${a.t}</b><br><span class="muted">${a.d}</span></span>${lockTag}</div>`;const[c,t]=a.p();const on=!!S.ach[a.id];return`<div class="ach"><span class="medal ${on?'on':''}">${IC.medal}</span><span class="tiny"><b>${a.t}</b>${a.title?` <span class="muted">· 칭호 보상</span>`:''}<br><span class="muted">${a.d}</span></span><span class="tiny num">${on?'달성':Math.min(c,t)+'/'+t}</span></div>`}).join('')}</div>
 
   <div class="sec">프리미엄 · 출시 알림</div>
-  <div class="cta-row" style="margin-top:0"><button class="tap" data-act="prem"><div class="t-title">프리미엄</div><div class="t-sub">준비 중 · 미리 보기</div></button><button class="tap" data-act="wait"><div class="t-title">출시 알림</div><div class="t-sub">대기자 등록</div></button></div>
+  <div class="promo-grid" style="margin-top:0"><button class="promo pro shine" data-act="prem"><span class="ic">${IC.crown}</span><span><b>프리미엄</b><small>준비 중 · 가격 미리 보기</small></span></button><button class="promo wait" data-act="wait"><span class="ic">${IC.bell}</span><span><b>출시 알림 받기</b><small>대기자 한정 칭호 지급</small></span></button></div>
   <div class="sec">테스트 메모 <small>이 기기 기록 · 친구 테스트 확인용</small></div>
   <div class="card tiny" style="margin-bottom:8px">도전장 보냄 ${S.m.chSent} · 받음 ${S.m.chRecv} (승 ${S.m.chWin} / 패 ${S.m.chLose} / 무 ${S.m.chDraw})<br>대기자 버튼 ${S.m.wait}번 · 프리미엄 화면 ${S.m.premView}번${S.prem?` · 가격 ${S.prem.price}원에 ‘${S.prem.ans==='yes'?'결제할래요':'안 할래요'}’`:''}</div>
   <div class="card tiny">${Object.keys(S.interest).filter(k=>S.interest[k]&&LOCKED[k]).map(k=>`<span class="tag" style="margin:2px">${LOCKED[k].t}</span>`).join('')||'<span class="muted">잠긴 기능을 열어 ‘이 기능 기대돼요’를 누르면 여기 모여요. 친구 테스트 때 어떤 기능이 궁금했는지 확인하는 용도예요.</span>'}</div>
@@ -1001,7 +1100,7 @@ function drawResult(){
   ${G.timeouts?`<p class="tiny" style="color:var(--bad)">시간 초과 ${G.timeouts}문제</p>`:''}
   ${G.wrongN?`<p class="tiny muted">틀린 ${G.wrongN}문제는 오답 노트에 저장했어요. 나 탭에서 다시 풀 수 있어요.</p>`:''}
   <p class="tiny muted">연속 학습 ${S.streak}일 · Lv.${lvOf(S.xp)}${CH_CODE[G.set.id]?` · 걸린 시간 ${G.secs}초`:''}</p>
-  ${CH_CODE[G.set.id]?`<button class="btn full hl" style="margin-top:6px" data-act="makeCh">${G.duel&&G.duel.recv?'되갚아 주기: 내 기록으로 도전장 보내기':'이 기록으로 도전장 보내기'}</button><button class="btn full ghost" style="margin-top:8px" data-act="wait">정식 출시 알림 받기</button>`:''}</div>`;
+  ${CH_CODE[G.set.id]?`<button class="btn full brand" style="margin-top:6px" data-act="makeCh">${G.duel&&G.duel.recv?'되갚아 주기: 내 기록으로 도전장 보내기':'이 기록으로 도전장 보내기'}</button><button class="btn full ghost" style="margin-top:8px" data-act="wait">정식 출시 알림 받기</button>`:''}</div>`;
   $('#shFoot').innerHTML=`<div class="row"><button class="btn ghost" style="flex:1" data-act="restart">다시 하기</button><button class="btn hl" style="flex:1" data-act="close">완료</button></div>`;
 }
 
@@ -1302,7 +1401,7 @@ setInterval(()=>{
   document.querySelectorAll('[data-cd="quick"]').forEach(el=>{const l=quickLeft();el.textContent=l?'다음 도전까지 '+fmtLeft(l):(el.closest('.feat')?'지금 도전 가능 · 최고 '+S.spd.best+'개':'지금 도전 가능')});
   document.querySelectorAll('[data-cd="word"]').forEach(el=>{if(wordDoneToday())el.textContent=(el.closest('.t-meta')?'':'완료 · ')+'새 단어까지 '+fmtLeft(nextReset()-Date.now())});
 },1000);
-document.getElementById('appName').textContent=APP_NAME;
+document.getElementById('appName').innerHTML=APP_NAME==='Readuel'?'Rea<span class="du">duel</span>':esc(APP_NAME);
 render();
 checkHash();
 window.addEventListener('hashchange',checkHash);
