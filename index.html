@@ -815,7 +815,7 @@ home(){
     <button class="btn full ${questDone()&&!S.q.claimed?'hl':''}" style="margin-top:10px" data-act="claim" ${questDone()&&!S.q.claimed?'':'disabled'}>${S.q.claimed?'오늘 보상 받음':questDone()?'보상 받기 +30 XP':`퀘스트 ${[S.q.feat,S.q.quick,S.q.word].filter(Boolean).length}/3 진행 중`}</button>
   </div>
   <div class="grid2" style="margin-top:12px">
-    <button class="tap ${wordDoneToday()?'off':''}" data-act="go" data-arg="word"><div class="tiny muted">오늘의 단어 10개</div><div class="h1" style="font-size:22px;margin:4px 0">${esc(ws[0].w)} 외 9개</div><div class="t-sub" data-cd="word">${wordDoneToday()?'완료 · 새 단어까지 '+fmtLeft(nextReset()-Date.now()):'하루 1번 · 아침 6시 리셋'}</div></button>
+    <button class="tap ${wordDoneToday()?'off':''}" data-act="go" data-arg="word"><div class="tiny muted">어휘력 · 하루 10개</div><div class="h1" style="font-size:22px;margin:4px 0">오늘의 단어</div><div class="t-sub" data-cd="word">${wordDoneToday()?'완료 · 새 단어까지 '+fmtLeft(nextReset()-Date.now()):'하루 1번 · 아침 6시 리셋'}</div></button>
     <button class="tap feat" data-act="go" data-arg="quick"><div class="tiny" style="color:#d4d8f5">정보 처리 속도</div><div class="h1" style="font-size:22px;margin:4px 0">1분 퀴즈</div><div class="t-sub" data-cd="quick">${ql?'다음 도전까지 '+fmtLeft(ql):'지금 도전 가능 · 최고 '+S.spd.best+'개'}</div></button>
   </div>
   <div class="sec">오답 노트 <small>${S.note.length}문제</small></div>
