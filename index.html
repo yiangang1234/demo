@@ -256,7 +256,7 @@ details.pv .passage{border:0;border-top:1px dashed var(--line);border-radius:0 0
 .outcome{font-size:21px;margin:6px 0 4px}
 .outcome.win{color:var(--good)}.outcome.lose{color:var(--bad)}
 .price{font-family:var(--display);font-weight:800;font-size:34px;line-height:1.3;margin:4px 0}
-.cardimg{width:100%;border-radius:12px;border:1.5px solid var(--ink);display:block;margin:10px 0}
+.cardimg{width:auto;max-width:100%;max-height:56vh;border-radius:12px;border:1.5px solid var(--ink);display:block;margin:10px auto}
 .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .invite .link{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#fff;border:1px dashed var(--lock);border-radius:8px;padding:6px 8px;margin-top:8px;color:var(--muted);word-break:break-all}
 
@@ -1254,7 +1254,7 @@ function challengeShareModal(){
   openModal(`<span class="tag hl">도전장</span><h2>내 기록으로 도전장 보내기</h2>
   ${nickInput('nick2')}<button class="btn sm ghost" style="margin-top:6px" data-act="nickApply">닉네임 적용</button>
   <div class="invite"><div class="tiny muted">친구에게 가는 메시지</div><div style="margin-top:4px;font-weight:600">${esc(msg)}</div>${link?`<div class="link">${esc(link)}</div>`:''}</div>
-  <div class="row"><button class="btn hl" style="flex:1" data-act="copyCh">메시지 복사</button><button class="btn ghost" style="flex:1" data-act="cardCh">결과 카드 만들기</button></div>
+  <div class="row"><button class="btn hl" style="flex:1" data-act="copyCh">메시지 복사</button><button class="btn ghost" style="flex:1" data-act="cardCh">스토리에 올리기</button></div>
   <p class="tiny muted">카톡·DM·인스타에 붙여 넣으면 돼요. 링크가 안 열리면 친구에게 이 코드를 보내 친구 탭 ‘도전장 붙여 넣기’에 넣게 하세요.<br><b style="color:var(--ink);word-break:break-all">${code}</b></p>
   <button class="btn full ghost" data-act="mclose">닫기</button>`);
 }
@@ -1263,31 +1263,36 @@ function copyText(t){
   const fallback=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();ok?done():toast('복사가 막혀 있어요. 코드를 길게 눌러 복사해 주세요')};
   try{navigator.clipboard.writeText(t).then(done,fallback)}catch(e){fallback()}
 }
-/* 인스타 피드 비율(4:5) 결과 카드 */
-function wrapText(ctx,text,maxW){const out=[];let line='';for(const ch of text){if(ctx.measureText(line+ch).width>maxW&&line){out.push(line);line=ch}else line+=ch}if(line)out.push(line);return out}
+/* 인스타 스토리 비율(9:16) 결과 카드 — 위아래 약 250px은 스토리 UI에 가려지는 영역이라 비워 둠 */
+function wrapText(ctx,text,maxW){const out=[];let line='';for(const w of text.split(' ')){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w}else line=t}if(line)out.push(line);return out}
 function makeCard(){
-  const c=LASTCH,W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+  const c=LASTCH,W=1080,H=1920,L=84,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
   const F=(w,sz)=>`${w} ${sz}px 'Gothic A1','IBM Plex Sans KR','Apple SD Gothic Neo',sans-serif`;
-  x.fillStyle='#f2f4f8';x.fillRect(0,0,W,H);
-  x.strokeStyle='rgba(43,79,224,.08)';x.lineWidth=2;for(let i=0;i<W;i+=54){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke()}for(let j=0;j<H;j+=54){x.beginPath();x.moveTo(0,j);x.lineTo(W,j);x.stroke()}
-  x.fillStyle='#151c45';x.fillRect(0,0,W,170);
-  x.fillStyle='#fff';x.font=F(800,64);x.textBaseline='middle';x.fillText(APP_NAME+' 도전장',72,88);
-  x.fillStyle='#ffd93b';x.font=F(700,34);x.textAlign='right';x.fillText(FIELD[fieldOf(c.set)],W-72,90);x.textAlign='left';
-  x.fillStyle='#151c45';x.font=F(800,60);let y=270;wrapText(x,SETS[c.set].title,W-144).slice(0,2).forEach(l=>{x.fillText(l,72,y);y+=80});
-  x.font=F(800,230);const sc=`${c.c} / ${c.n}`;const sw=x.measureText(sc).width;
-  x.fillStyle='#ffd93b';x.fillRect(72,y+175,sw,48);x.fillStyle='#151c45';x.fillText(sc,72,y+130);
-  x.font=F(700,52);x.fillStyle='#596185';x.fillText(`${c.secs}초`,72,y+300);
-  y+=400;
-  if(c.vs){x.font=F(700,46);x.fillStyle='#151c45';x.fillText(`vs ${c.vs.name} ${c.vs.c}/${c.vs.n} · ${c.vs.secs}초`,72,y);x.fillStyle=c.vs.outcome==='win'?'#12895a':c.vs.outcome==='lose'?'#d23f35':'#151c45';x.font=F(800,58);x.fillText({win:'기록 깨기 성공!',lose:'아깝게 패배…',draw:'완전 동점!'}[c.vs.outcome],72,y+80);y+=170}
-  x.fillStyle='#151c45';x.font=F(800,64);x.fillText(`${S.name}의 기록,`,72,y);x.fillText('깰 수 있어?',72,y+86);
-  x.fillStyle='#596185';x.font=F(600,32);x.fillText('Thinking & Intelligence Gaming Platform',72,H-110);
-  x.font=F(600,30);x.fillText('도전장 코드  '+c.code,72,H-62);
+  x.fillStyle='#f4f5fa';x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(27,30,60,.06)';x.lineWidth=2;for(let i=0;i<W;i+=60){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke()}for(let j=0;j<H;j+=60){x.beginPath();x.moveTo(0,j);x.lineTo(W,j);x.stroke()}
+  x.fillStyle='#1B1E3C';x.fillRect(0,0,W,440);
+  x.fillStyle='#FF5A36';x.fillRect(0,440,W,14);
+  x.textBaseline='middle';
+  x.fillStyle='#fff';x.font=F(800,76);x.fillText(APP_NAME,L,300);const nw=x.measureText(APP_NAME).width;
+  x.fillStyle='#FFC53D';x.font=F(800,76);x.fillText(' 도전장',L+nw,300);
+  x.fillStyle='rgba(255,255,255,.75)';x.font=F(700,36);x.fillText(FIELD[fieldOf(c.set)],L,380);
+  x.fillStyle='#1B1E3C';x.font=F(800,66);let tl=wrapText(x,SETS[c.set].title,W-L*2);if(tl.length>1){x.font=F(800,58);tl=wrapText(x,SETS[c.set].title,W-L*2)}tl=tl.slice(0,2);let y=580;tl.forEach(l=>{x.fillText(l,L,y);y+=tl.length>1?78:88});
+  y+=140;
+  x.font=F(800,260);const sc=`${c.c} / ${c.n}`;const sw=x.measureText(sc).width;
+  x.fillStyle='#FFC53D';x.fillRect(L-6,y+60,sw+12,64);x.fillStyle='#1B1E3C';x.fillText(sc,L,y);
+  x.font=F(700,58);x.fillStyle='#5b6080';x.fillText(`${c.secs}초 만에`,L,y+200);
+  y+=c.vs?310:340;
+  if(!c.vs)y+=90;
+  if(c.vs){x.font=F(700,48);x.fillStyle='#1B1E3C';x.fillText(`vs ${c.vs.name} ${c.vs.c}/${c.vs.n} · ${c.vs.secs}초`,L,y);x.fillStyle=c.vs.outcome==='win'?'#12895a':c.vs.outcome==='lose'?'#d23f35':'#1B1E3C';x.font=F(800,64);x.fillText({win:'기록 깨기 성공!',lose:'아깝게 패배…',draw:'완전 동점!'}[c.vs.outcome],L,y+90);y+=200}
+  x.fillStyle='#1B1E3C';x.font=F(800,76);x.fillText(`${S.name}의 기록,`,L,y);x.fillStyle='#FF5A36';x.fillText('깰 수 있어?',L,y+100);
+  x.fillStyle='#5b6080';x.font=F(600,34);x.fillText('Thinking & Intelligence Gaming Platform',L,Math.max(H-330,y+200));
+  x.font=F(700,34);x.fillStyle='#1B1E3C';x.fillText('도전장 코드  '+c.code,L,Math.max(H-278,y+252));
   return cv;
 }
 function cardModal(){
   const cv=makeCard();CARD_URL=cv.toDataURL('image/png');CARD_BLOB=null;try{cv.toBlob(b=>{CARD_BLOB=b})}catch(e){}
-  openModal(`<span class="tag hl">결과 카드</span><h2>인스타·카톡에 올리기</h2><img class="cardimg" src="${CARD_URL}" alt="도전장 결과 카드">
-  <div class="row"><button class="btn hl" style="flex:1" data-act="shareCard">공유하기</button><a class="btn ghost" style="flex:1;text-decoration:none" href="${CARD_URL}" download="thinky-dojeonjang.png">이미지 저장</a></div>
+  openModal(`<span class="tag hl">스토리용 카드 9:16</span><h2>스토리에 올리기</h2><img class="cardimg" src="${CARD_URL}" alt="도전장 결과 카드">
+  <div class="row"><button class="btn hl" style="flex:1" data-act="shareCard">공유하기</button><a class="btn ghost" style="flex:1;text-decoration:none" href="${CARD_URL}" download="readuel-dojeonjang.png">이미지 저장</a></div>
   <p class="tiny muted">저장이 안 되면 이미지를 길게 눌러 저장하세요. 카드와 함께 도전장 링크도 보내야 친구가 바로 도전할 수 있어요.</p>
   <button class="btn full ghost" data-act="mclose">닫기</button>`);
 }
