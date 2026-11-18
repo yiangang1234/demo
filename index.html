@@ -381,6 +381,33 @@ body{background:var(--navy)}
 .subhead .ci{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--c);box-shadow:0 3px 0 var(--cd);flex:none}
 .subhead .ci svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){.shine::after{display:none}}
+/* v5.9 파란 공유 버튼 · 체인 칩 · 재도전 잠금 */
+.btn.blue-glow{background:linear-gradient(180deg,#4DA3FF 0%,#1F6BFF 100%);color:#fff;box-shadow:0 4px 0 #1446b8,0 0 0 0 rgba(47,128,255,.55);position:relative;overflow:hidden;animation:blueGlow 2s ease-in-out infinite}
+.btn.blue-glow:active{box-shadow:0 1px 0 #1446b8}
+.btn.blue-glow::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-100%);animation:waitShine 2.6s ease-in-out infinite}
+@keyframes blueGlow{0%,100%{box-shadow:0 4px 0 #1446b8,0 0 10px 0 rgba(47,128,255,.45)}50%{box-shadow:0 4px 0 #1446b8,0 0 26px 6px rgba(47,128,255,.6)}}
+.btn.retry-lock{background:#eef1f8;color:#5b6080;border:2px dashed #b9c0d6;box-shadow:none;font-size:14px}
+.btn.retry-on{animation:retryPop .5s ease-out}
+@keyframes retryPop{0%{transform:scale(.94)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+.chainbox2{margin:14px 0 6px;padding:12px;border-radius:16px;background:linear-gradient(135deg,#EEF4FF 0%,#F6F0FF 100%);border:2px solid #cfdcff;text-align:left}
+.chead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.cbadge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--navy);color:#fff;font-size:12px;font-weight:800}
+.crow{display:flex;align-items:center;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:none}.crow::-webkit-scrollbar{display:none}
+.clink{flex:1 0 14px;min-width:14px;height:3px;margin:0 2px 30px;border-radius:2px;background:repeating-linear-gradient(90deg,#8aa8ff 0 6px,transparent 6px 10px)}
+.cnode{position:relative;display:flex;flex-direction:column;align-items:center;min-width:64px;flex:none}
+.cav{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;border:2.5px solid #9fb5f0;font-weight:800;font-size:17px;color:var(--navy)}
+.cname{font-size:12px;font-weight:800;margin-top:4px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmeta{font-size:10.5px;color:#5b6080;display:flex;align-items:center;gap:3px;white-space:nowrap}
+.grade.xs{min-width:16px;height:16px;padding:0 3px;border-radius:5px;font-size:10px}
+.cnode.me .cav{background:linear-gradient(180deg,#4DA3FF,#1F6BFF);color:#fff;border-color:#1446b8;box-shadow:0 0 0 4px rgba(47,128,255,.2)}
+.cnode.lead .cav{border-color:#E0A100;box-shadow:0 0 0 3px rgba(255,197,61,.45)}
+.ccrown{position:absolute;top:-13px;left:50%;transform:translateX(-50%);width:20px;height:20px;color:#E0A100}
+.ccrown svg{width:20px;height:20px;fill:#FFC53D;stroke:#E0A100;stroke-width:1.5}
+.cnode.next .cav{border-style:dashed;background:transparent;color:#8aa8ff;animation:nextPulse 1.6s ease-in-out infinite}
+.cnode.more .cav{border-style:dotted;background:transparent;color:#8a8fa8}
+@keyframes nextPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.cfoot{margin-top:8px;color:#5b6080}
+@media (prefers-reduced-motion:reduce){.btn.blue-glow,.btn.blue-glow::after,.cnode.next .cav{animation:none}}
 /* v5.8 결과 화면 보조 버튼 */
 .btn.story-btn{background:linear-gradient(45deg,#FFB13D 0%,#FF5A36 35%,#E8306E 65%,#8A3FFC 100%);color:#fff;box-shadow:0 4px 0 #9b2350;gap:8px}
 .btn.story-btn:active{box-shadow:0 1px 0 #9b2350}
@@ -1119,18 +1146,18 @@ function drawResult(){
   const o=G.duel&&G.duel.recv;
   const d=G.duel||{};
   const duelHTML=o?`<div class="vsbox"><div><small>${esc(o.name)}</small><b>${o.c}/${o.n}</b><span>${o.secs}초</span></div><div class="vs">VS</div><div><small>나${d.retry?' · 재도전':''}</small><b>${G.c}/${n}</b><span>${G.secs}초</span></div></div><div class="h1 outcome ${G.outcome}">${{win:d.retry?'재도전 성공! 기록을 깼어요':'도전 성공! 기록을 깼어요',lose:'아깝다, 기록을 못 깼어요',draw:'완전 동점!'}[G.outcome]}</div>${d.retry&&d.first?`<p class="tiny muted" style="margin:0">첫 기록 ${d.first.c}/${n} · ${d.first.secs}초</p>`:'<p class="tiny muted" style="margin:0">맞힌 개수가 같으면 더 빨리 푼 사람이 이겨요.</p>'}
-  ${o?`<div class="chainbox" style="text-align:left"><div class="tiny muted">도전장 체인 · 너는 ${chainInfo(o).myPos}번째 주자</div><div class="cpath">${chainPath(o,'<b>나</b>')} → ?</div></div>`:''}`:'';
+`:'';
   const canCh=!!CH_CODE[G.set.id];const gr=gradeOf(G.set.id,G.c,n,G.secs);
-  const hint=!canCh?'':!o?(gr==='S'||gr==='A'?'이 기록이면 친구들 꽤 고생할걸요?':'친구는 몇 개나 맞힐까요? 같이 풀어 보자고 보내 보세요.'):G.outcome==='win'?'기록을 깼어요. 다음 상대를 고를 차례예요.':G.outcome==='lose'?(d.retry?'친구에게 복수를 맡겨 보세요.':'재도전 1번 남았어요. 아니면 친구에게 복수를 맡겨 보세요.'):'승부가 안 났어요. 다른 친구에게 판정을 맡겨 보세요.';
+  const hint=!canCh?'':!o?(gr==='S'||gr==='A'?'이 기록이면 친구들 꽤 고생할걸요?':'친구는 몇 개나 맞힐까요? 같이 풀어 보자고 보내 보세요.'):G.outcome==='win'?'기록을 깼어요. 다음 상대를 고를 차례예요.':G.outcome==='lose'?(d.retry?'친구에게 복수를 맡겨 보세요.':'아깝다! 친구에게 도전장을 보내면 재도전 기회를 1번 더 줘요.'):(d.retry?'승부가 안 났어요. 다른 친구에게 판정을 맡겨 보세요.':'완전 동점! 친구에게 도전장을 보내면 재도전 기회를 1번 더 줘요.');
   const shareLabel=!o?'친구에게 도전장 보내기':G.outcome==='win'?'다음 상대에게 도전장 보내기':G.outcome==='lose'?'친구에게 복수 맡기기':'친구에게 판정 맡기기';
   const chHTML=canCh?`<div class="chshare">
     ${hint?`<p class="tiny" style="margin:0 0 8px;font-weight:700">${hint}</p>`:''}
     <div class="nickrow"><label for="nick3">보내는 이름</label><input class="inp" id="nick3" maxlength="10" value="${S.name==='체험생'?'':esc(S.name)}" placeholder="친구가 알아볼 닉네임" autocomplete="off"></div>
-    <button class="btn full brand big-cta" data-act="shareCh">⚔️ ${shareLabel}</button>
-    ${o&&G.outcome==='lose'&&!d.retry?`<button class="btn full hl" style="margin-top:8px" data-act="retryCh">재도전 1회 (같은 문제)</button>`:''}
+    <button class="btn full big-cta blue-glow" data-act="shareCh">⚔️ ${shareLabel}</button>
+    ${o&&G.outcome!=='win'&&!d.retry?(d.unlocked?`<button class="btn full hl retry-on" style="margin-top:8px" data-act="retryCh">🎁 재도전 1회 열림! 같은 문제로 다시 도전</button>`:`<button class="btn full retry-lock" style="margin-top:8px" data-act="retryLocked">🔒 재도전 1회 · 도전장을 보내면 열려요</button>`):''}
     <div class="row" style="margin-top:10px"><button class="btn story-btn" style="flex:1.4" data-act="storyCh"><span class="story-ring"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>스토리에 올리기</button><button class="btn ghost" style="flex:1" data-act="makeCh">링크·코드 보기</button></div>
     <button class="btn full wait-btn" style="margin-top:10px" data-act="wait"><span class="wait-ic">${IC.bell}</span><span class="wait-tx"><b>정식 출시 알림 받기</b><small>대기자 한정 칭호 지급 · 1분 설문</small></span><span class="wait-go">›</span></button></div>`:'';
-  $('#shBody').innerHTML=`<div class="result">${duelHTML}<div class="tiny muted">${esc(G.set.title)}</div><div class="big num" style="margin-top:8px">${canCh?gradeTag(gr,'lg')+' ':''}${G.c}<span style="font-size:28px" class="muted"> / ${n}</span></div><div class="h1" style="font-size:20px;margin-top:10px"><span class="mark">${msg}</span></div>${chHTML}
+  $('#shBody').innerHTML=`<div class="result">${duelHTML}<div class="tiny muted">${esc(G.set.title)}</div><div class="big num" style="margin-top:8px">${canCh?gradeTag(gr,'lg')+' ':''}${G.c}<span style="font-size:28px" class="muted"> / ${n}</span></div><div class="h1" style="font-size:20px;margin-top:10px"><span class="mark">${msg}</span></div>${canCh?chainHTML(o||null,'나',{c:G.c,secs:G.secs},G.set.id):''}${chHTML}
   <div class="rew"><div><span class="tiny muted">얻은 경험치</span><b class="num">+${G.xp} XP</b></div><div><span class="tiny muted">얻은 트로피</span><b class="num">+${G.tro}</b></div></div>
   ${G.timeouts?`<p class="tiny" style="color:var(--bad)">시간 초과 ${G.timeouts}문제</p>`:''}
   ${G.wrongN?`<p class="tiny muted">틀린 ${G.wrongN}문제는 오답 노트에 저장했어요. 나 탭에서 다시 풀 수 있어요.</p>`:''}
@@ -1271,6 +1298,25 @@ function chainInfo(ch){
   const people=[...ch.chain,{name:ch.name,c:ch.c,secs:ch.secs}];
   return{people,senderPos:ch.depth+1,myPos:ch.depth+2,leader:leaderOf(people),cut:ch.depth>ch.chain.length};
 }
+/* 체인을 이어달리기 칩으로 그림. ch=받은 도전장(없으면 내가 첫 주자), meLabel='너'|'나', rec=내 기록(결과 화면) */
+function chainHTML(ch,meLabel,rec,setId){
+  const n=ch?ch.n:(G.ids?G.ids.length:0),sid=ch?ch.set:setId;
+  const people=ch?chainInfo(ch).people:[];
+  const me={name:meLabel,c:rec?rec.c:null,secs:rec?rec.secs:null,me:1};
+  const all=rec?[...people,me]:people;
+  const lead=all.filter(x=>x.c!=null).length?leaderOf(all.filter(x=>x.c!=null)):null;
+  const myPos=ch?ch.depth+2:1;
+  const chip=(x,i)=>{const isLead=lead&&x===lead&&all.length>1;const g=x.c!=null?gradeOf(sid,x.c,n,x.secs):'';
+    return`<div class="cnode${x.me?' me':''}${isLead?' lead':''}">${isLead?`<span class="ccrown">${IC.crown}</span>`:''}<div class="cav">${esc((x.name||'?').slice(0,1))}</div><div class="cname">${esc(x.name)}</div>${g?`<div class="cmeta"><span class="grade xs" style="background:${GRADE_COL[g]}">${g}</span>${x.c}/${n} · ${x.secs}초</div>`:'<div class="cmeta">도전 중</div>'}</div>`};
+  const nodes=[];
+  if(ch&&chainInfo(ch).cut)nodes.push('<div class="cnode more"><div class="cav">…</div></div>');
+  all.forEach((x,i)=>nodes.push(chip(x,i)));
+  if(!rec)nodes.push(chip(me));
+  nodes.push(`<div class="cnode next"><div class="cav">?</div><div class="cname">다음 주자</div><div class="cmeta">${myPos+1}번째</div></div>`);
+  return`<div class="chainbox2"><div class="chead"><span class="cbadge">⛓ 도전장 체인</span><span class="tiny">${myPos===1?`${meLabel}부터 <b>체인 시작!</b>`:`${meLabel}는 <b>${myPos}번째 주자</b>`}</span></div>
+  <div class="crow">${nodes.join('<span class="clink"></span>')}</div>
+  ${lead&&all.length>1?`<div class="tiny cfoot">👑 체인 1위 <b>${esc(lead.name)}</b> · 이 기록을 넘으면 1위가 바뀌어요</div>`:''}</div>`;
+}
 function chainPath(ch,me){const ci=chainInfo(ch);return(ci.cut?'… → ':'')+ci.people.map(x=>esc(x.name)).join(' → ')+' → '+(me||'너')}
 function shareLink(code){
   let base=SHARE_BASE;
@@ -1295,7 +1341,7 @@ function openChallenge(ch){
   const s=SETS[ch.set];
   openModal(`<span class="tag hl">도전장 도착</span><h2>⚔️ ${esc(ch.name)}님의 도전장</h2>
   <div class="invite"><div class="tiny muted">${FIELD[fieldOf(ch.set)]} · ${s.title}</div><div class="price">${gradeTag(gradeOf(ch.set,ch.c,ch.n,ch.secs))} ${ch.c} / ${ch.n} <span class="tiny muted" style="font-family:var(--body);font-weight:600">${ch.secs}초</span></div><div class="tiny">같은 문제로 이 기록을 깨 보세요. 맞힌 개수가 같으면 더 빨리 푼 사람이 이겨요.</div></div>
-  ${ch.chain.length?(()=>{const ci=chainInfo(ch);return`<div class="chainbox"><div class="tiny muted">도전장 체인</div><div class="cpath">${chainPath(ch)}</div><div class="tiny">너는 <b>${ci.myPos}번째 주자</b> · 체인 1위 <b>${esc(ci.leader.name)}</b> ${gradeOf(ch.set,ci.leader.c,ch.n,ci.leader.secs)}랭크 ${ci.leader.c}/${ch.n} · ${ci.leader.secs}초</div></div>`})():''}
+  ${ch.chain.length?chainHTML(ch,'너'):''}
   ${nickInput('nick')}
   <button class="btn full hl" style="margin-top:12px" data-act="acceptCh">도전 수락</button>
   <button class="btn full ghost" style="margin-top:8px" data-act="mclose">나중에</button>`);
@@ -1331,8 +1377,8 @@ function chMsg(r){
 async function shareCh(which){
   if(!readNick3())return;
   buildCh(which);
-  try{if(navigator.share){await navigator.share({text:LASTCH.msg});S.m.chSent++;save();afterShare();return}}catch(e){if(e&&e.name==='AbortError')return}
-  S.m.chSent++;save();copyText(LASTCH.msg);setTimeout(afterShare,1200);
+  try{if(navigator.share){await navigator.share({text:LASTCH.msg});S.m.chSent++;save();unlockRetry();afterShare();return}}catch(e){if(e&&e.name==='AbortError')return}
+  S.m.chSent++;save();copyText(LASTCH.msg);unlockRetry();setTimeout(afterShare,1200);
 }
 function readNick3(){
   const el=document.getElementById('nick3');if(!el)return true;
@@ -1340,6 +1386,8 @@ function readNick3(){
   if(!v&&S.name==='체험생'){toast('친구가 알아볼 닉네임을 넣어 주세요');el.focus();return false}
   if(v){S.name=v.slice(0,10);save()}return true;
 }
+/* 도전장을 보내면 진(또는 비긴) 사람에게 재도전 1회를 열어 줌 */
+function unlockRetry(){const d=G.duel;if(!d||!d.recv||d.retry||d.unlocked||G.outcome==='win'||G.phase!=='done')return;d.unlocked=true;S.m.chUnlock=(S.m.chUnlock||0)+1;save();drawResult();toast('🎁 재도전 기회 1번이 열렸어요!')}
 /* 공유를 끝낸 직후에 설문 권유 (한 세션에 한 번, 이미 대기자 창을 열어 본 사람은 생략) */
 let SURVEY_ASKED=false;
 function afterShare(){
@@ -1466,10 +1514,11 @@ document.addEventListener('click',e=>{
   case 'acceptCh':{const ch=LASTCH&&LASTCH.recvPending;if(!ch)break;readNick('nick');S.m.chRecv++;save();closeModal();startSet(ch.set);G.duel={recv:ch};break}
   case 'makeCh':if(!readNick3())break;challengeShareModal();break;
   case 'nickApply':readNick('nick2');challengeShareModal();toast('닉네임을 바꿨어요');break;
-  case 'copyCh':S.m.chSent++;save();copyText(LASTCH.msg);setTimeout(afterShare,1200);break;
+  case 'copyCh':S.m.chSent++;save();copyText(LASTCH.msg);unlockRetry();setTimeout(afterShare,1200);break;
+  case 'retryLocked':toast('위의 파란 버튼으로 도전장을 보내면 재도전이 열려요');break;
   case 'shareCh':shareCh(arg);break;
   case 'storyCh':if(!readNick3())break;buildCh();cardModal();break;
-  case 'retryCh':{const d=G.duel;if(!d||!d.recv||d.retry)break;S.m.chRetry=(S.m.chRetry||0)+1;save();const keep={...d,retry:true};startSet(G.set.id);G.duel=keep;break}
+  case 'retryCh':{const d=G.duel;if(!d||!d.recv||d.retry||!d.unlocked)break;S.m.chRetry=(S.m.chRetry||0)+1;save();const keep={...d,retry:true};startSet(G.set.id);G.duel=keep;break}
   case 'cardCh':cardModal();break;
   case 'shareCard':shareCard();break;
   case 'wait':closeModal();setTimeout(()=>waitModal(),0);break;
