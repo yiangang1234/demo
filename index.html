@@ -381,6 +381,12 @@ body{background:var(--navy)}
 .subhead .ci{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--c);box-shadow:0 3px 0 var(--cd);flex:none}
 .subhead .ci svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){.shine::after{display:none}}
+/* v6.4 장면 분리 */
+.phone{margin-top:14px;border:2.5px solid var(--navy);border-radius:18px;overflow:hidden;background:#C9D6E8}
+.phone .phead{display:flex;align-items:center;gap:8px;background:var(--navy);color:#fff;font-size:13px;font-weight:700;padding:8px 12px}
+.phone .ptag{background:var(--gold);color:var(--navy);border-radius:999px;padding:2px 9px;font-weight:800}
+.phone .chat{padding:10px}
+.phone + .ctx{margin-top:14px}
 /* v6.3 */
 .unread{display:inline-block;margin-left:6px;padding:0 5px;border-radius:6px;background:#1B1E3C;color:#FFC53D;font-weight:800;font-size:12px;line-height:18px}
 /* v6.0 에피소드 */
@@ -442,7 +448,7 @@ body{background:var(--navy)}
 <body>
 <div id="app">
   <header class="top">
-    <div class="logo"><span id="appName">Readuel</span> <small>데모 v6.3</small></div>
+    <div class="logo"><span id="appName">Readuel</span> <small>데모 v6.4</small></div>
     <div class="chips" id="chips"></div>
   </header>
   <main id="main"></main>
@@ -555,6 +561,9 @@ items:[
 ];
 
 const chat=lines=>'<div class="chat">'+lines.map(l=>l[0]==='sys'?`<div class="sys">${l[1]}</div>`:`<div class="bub ${l[1]}"><small>${l[0]}</small>${l[2]}</div>`).join('')+'</div>';
+const ur=n=>`<span class="unread">${n}</span>`;
+/* 장면을 나눌 때: 화면마다 독립된 폰 틀 (한 채팅으로 이어져 보이지 않게) */
+const phone=(tag,label,lines)=>`<div class="phone"><div class="phead"><span class="ptag">${tag}</span>${label}</div>${chat(lines)}</div>`;
 const suspects=(intro,list)=>`<div class="ctx"><p>${intro}</p></div><div class="ctx" style="margin-top:8px">`+list.map(s=>`<div class="suspect"><div class="av">${s[0][0]}</div><div><b>${s[0]}</b><div>“${s[1]}”</div>${s[2]?`<div class="note">${s[2]}</div>`:''}</div></div>`).join('')+'</div>';
 
 const CASES={
@@ -705,11 +714,12 @@ const EP={
    {id:'k3',type:'mc',ab:'inf',kind:'사라진 수학 시험지',ctx:suspects('교무실 책상 위에 있던 수학 시험지 한 장이 사라졌다. 용의자는 청소 당번 네 명이고 <b>범인은 한 명</b>이다. 그런데 이상하게도 <b>네 명 중 딱 한 명만 진실을 말하고 있다.</b>',[
     ['가온','범인은 나린이야.'],['나린','범인은 라희야.'],['다온','나는 범인이 아니야.'],['라희','나린이는 거짓말하고 있어.']]),
     q:'범인은 누구일까?',opts:['가온','나린','다온','라희'],ans:2,exp:'나린의 말과 라희의 말은 정반대라서 둘 중 정확히 한 명만 진실이에요. 진실은 딱 한 명이니 가온과 다온은 거짓말을 한 거예요. 다온의 “나는 범인이 아니야”가 거짓이니 범인은 다온! (가온의 “범인은 나린”도 거짓이 맞아요.)'},
-   {id:'k4',type:'mc',ab:'inf',kind:'비 오는 날의 미술실',ctx:suspects('미술실의 새 물감 세트가 없어졌다. 미술실은 <b>2시 50분부터 3시까지만</b> 비어 있었다. 그날은 <b>2시 40분부터 비가 쏟아졌고</b>, 3시 5분에 세 명 모두 교실로 돌아왔다.',[
-    ['준서','2시 50분부터 운동장에서 친구들이랑 축구했어. 공 차느라 정신없었지.','3시 5분, 교실로 돌아온 준서의 옷과 운동화는 보송보송했다'],
-    ['소율','도서관에 책 반납하러 갔었어.','도서관 반납 기록 2시 55분'],
-    ['태오','급식실 앞에서 우산 쓰고 친구 기다렸어.','함께 있던 친구가 확인해 줌']]),
-    q:'거짓말을 하고 있는 사람은?',opts:['준서','소율','태오','아무도 없다'],ans:0,exp:'2시 40분부터 비가 쏟아졌어요. 그 시간에 운동장에서 축구를 했다면 옷과 운동화가 젖어 있어야 해요. 사건 정보와 증거를 함께 놓고 읽으면 진술의 빈틈이 보여요.'}]},
+   {id:'k4',type:'mc',ab:'inf',kind:'비 오는 날의 미술실',ctx:suspects('본관 3층 미술실의 새 물감 세트가 없어졌다. 미술실은 <b>2시 50분부터 3시까지만</b> 비어 있었다. 그날은 <b>2시 40분부터 3시 30분까지 비가 쏟아졌다.</b> <b>체육관은 본관 건너편</b>이라 오가려면 지붕 없는 운동장을 지나야 한다. 3시 5분, 네 명 모두 본관 교실로 돌아왔다.',[
+    ['준서','2시 50분부터 운동장에서 축구했어. 비 오니까 더 재밌더라.','흙탕물에 젖은 운동화를 신고 들어옴'],
+    ['소율','본관 2층 도서관에서 책 반납하고 읽다 왔어.','도서관 반납 기록 2시 55분'],
+    ['태오','급식실 앞 처마 밑에서 친구 기다렸어. 우산은 있었는데 펼 일도 없었어.','우산은 접힌 채 말라 있음, 친구가 같이 있었다고 확인'],
+    ['하린','체육관에서 배드민턴 쳤어. 비 오는 줄도 몰랐다니까.','우산 없이 들어왔고, 옷과 머리가 보송보송함']]),
+    q:'거짓말을 하고 있는 사람은?',opts:['준서','소율','태오','하린'],ans:3,exp:'밖에 있었다는 준서가 수상해 보이지만, 옷이 젖어 있어 말과 맞아요. 하린은 체육관에서 왔다면 3시 5분에 비를 맞으며 운동장을 건너야 했는데, 우산도 없이 보송보송해요. 진술 + 사건 조건 + 증거, 세 가지를 같이 맞춰 봐야 풀리는 문제예요.'}]},
   {name:'마지막 컵라면',items:[
    {id:'k5',type:'mc',ab:'inf',kind:'동아리방 마지막 컵라면',ctx:suspects('동아리방에 하나 남은 컵라면이 사라졌다. 확실한 건 <b>가장 늦게 도착한 사람이 혼자 남아 먹었다</b>는 것. 네 명은 도착 순서에 대해 <b>모두 사실만</b> 말했다.',[
     ['하린','내가 제일 먼저 온 건 아니야.'],['주원','나는 하린이보다 먼저 왔어.'],['은호','나는 주원이보다 늦게 왔지만, 꼴찌는 아니야.'],['서아','나는 하린이 바로 다음에 왔어.']]),
@@ -720,9 +730,12 @@ const EP={
     ['시은','구립 도서관에 책 반납하러 학교 근처에 잠깐 왔어요.','구립 도서관 반납 기록 3시 50분']]),
     q:'거짓말을 하고 있는 사람은?',opts:['유나','건우','시은','셋 다 사실이다'],ans:1,exp:'그날은 개교기념일이라 학교가 쉬었어요. 그런데 건우는 ‘6교시 끝나고’라고 말해요. 수업이 없던 날에 6교시가 있을 수 없죠. 교복을 입고 나타난 것도 수상해요.'}]},
   {name:'사라진 숫자 1',items:[
-   {id:'k7',type:'mc',ab:'inf',kind:'단톡방의 사라진 1',ctx:'<div class="ctx"><p>민서가 생일 파티 단톡방(<b>민서·지우·하준·예린, 4명</b>)에 메시지를 보냈다. 카톡 말풍선 옆 숫자는 <b>아직 안 읽은 사람 수</b>다.</p></div><div class="ctx" style="margin-top:8px"><div class="tiny muted">화면 ① 밤 9시 10분</div>'+chat([['민서','r','내일 생일 파티 몇 시가 좋아? <span class="unread">1</span>'],['지우','l','7시!'],['예린','l','난 다 좋아 ㅎㅎ']])+'<div class="tiny muted" style="margin-top:10px">화면 ② 밤 9시 30분 · 그 사이 새 메시지 없음</div>'+chat([['민서','r','내일 생일 파티 몇 시가 좋아?']])+'</div>'+suspects('다음 날, 답장 안 한 이유를 물어보니…',[
-    ['지우','나는 7시라고 바로 답장했잖아.'],['하준','어제 저녁엔 폰이 꺼져 있어서 단톡을 아예 못 봤어.'],['예린','나는 답장하고 바로 잤어.']]),
-    q:'메시지를 읽고도 못 봤다고 거짓말한 사람은?',opts:['지우','하준','예린','알 수 없다'],ans:1,exp:'9시 10분에 숫자 1이 남아 있었다는 건, 답장한 지우·예린 말고 한 명(하준)이 아직 안 읽었다는 뜻이에요. 9시 30분에 1이 사라졌으니 그 사이 하준이 읽은 거예요. 답장 없이 읽기만 한 ‘읽씹’ 확정!'}]}
+   {id:'k7',type:'mc',ab:'inf',kind:'단톡방의 사라진 1',ctx:'<div class="ctx"><p>민서가 생일 파티 단톡방(<b>민서·지우·하준·예린, 4명</b>)에 메시지를 보냈다. 말풍선 옆 숫자는 <b>그 메시지를 아직 안 읽은 사람 수</b>(보낸 사람 제외)이고, 채팅방을 열면 그때까지의 메시지를 모두 읽게 된다.</p></div>'
+     +phone('화면 ①','민서의 폰 · 밤 9시 10분',[['민서','r','내일 생일 파티 몇 시가 좋아?'+ur(1)],['지우','l','7시!'+ur(1)]])
+     +phone('화면 ②','민서의 폰 · 밤 9시 30분',[['민서','r','내일 생일 파티 몇 시가 좋아?'+ur(1)],['지우','l','7시!'+ur(1)],['예린','l','난 다 좋아 ㅎㅎ'+ur(1)],['지우','l','ㅇㅋ 그럼 7시!'+ur(2)]])
+     +suspects('다음 날, 세 사람에게 물어보니…',[
+    ['지우','나는 9시 5분에 보자마자 답했어.'],['하준','학원 수업 중이라 폰을 가방에 넣어 놨어. 9시 반 넘어서 처음 봤어.'],['예린','나는 9시 20분에 처음 보고 바로 답장했어.']]),
+    q:'거짓말을 한 사람은?',opts:['지우','하준','예린','알 수 없다'],ans:2,exp:'화면 ①(9시 10분)에서 ‘7시!’ 옆 숫자가 1이에요. 민서는 이미 읽었으니, 하준과 예린 중 한 명이 9시 5분~10분 사이에 채팅방을 연 거예요. 화면 ②(9시 30분)에서도 첫 메시지 숫자가 1이에요. 예린은 9시 20분에 답장했으니 확실히 읽었고, 남은 1은 하준이에요. 그러니 9시 10분 전에 몰래 읽은 사람은 예린! 바로 봐 놓고 20분 뒤에 처음 본 척한 거예요.'}]}
  ],
  'case-chat':[
   {name:'‘괜찮아’의 함정',items:[
